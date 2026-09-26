@@ -72,6 +72,17 @@ final class CodableContractTests: XCTestCase {
         XCTAssertNil(decoded.medications[0].notifyWindow)
     }
 
+    func testMedicationWithoutIdAndCreatedAtDecodes() throws {
+        // Форма medplan/1 (§4): ни id, ни createdAt — импорт генерирует их сам.
+        let json = #"{"name":"Акнекутан","unit":"mg","form":"капсулы 8 мг"}"#
+        let med = try JSONDecoder().decode(Medication.self, from: Data(json.utf8))
+        XCTAssertEqual(med.name, "Акнекутан")
+        XCTAssertEqual(med.unit, .mg)
+        XCTAssertEqual(med.form, "капсулы 8 мг")
+        XCTAssertNotNil(med.id)
+        XCTAssertNil(med.cumulativeTarget)
+    }
+
     func testNotifyWindowRoundTrip() throws {
         let window = NotifyWindow(startHour: 20, endHour: 23, intervalMinutes: 30)
         let med = Medication(name: "Акнекутан", form: "капсулы 8 мг", unit: .mg,

@@ -50,6 +50,27 @@ public struct Medication: Codable, Identifiable, Hashable, Sendable {
         self.colorHex = colorHex
         self.createdAt = createdAt
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, form, unit, intakeRule, cumulativeTarget, weightKg, notifyWindow, colorHex, createdAt
+    }
+
+    /// Терпимое декодирование: `id`/`createdAt`/опциональные поля могут отсутствовать
+    /// (импортные форматы вроде medplan/1 — там их нет) → id генерируется;
+    /// в бэкапе присутствуют → сохраняются (restore не должен менять идентичности).
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try c.decode(String.self, forKey: .name)
+        form = try c.decodeIfPresent(String.self, forKey: .form)
+        unit = try c.decode(DoseUnit.self, forKey: .unit)
+        intakeRule = try c.decodeIfPresent(String.self, forKey: .intakeRule)
+        cumulativeTarget = try c.decodeIfPresent(Double.self, forKey: .cumulativeTarget)
+        weightKg = try c.decodeIfPresent(Double.self, forKey: .weightKg)
+        notifyWindow = try c.decodeIfPresent(NotifyWindow.self, forKey: .notifyWindow)
+        colorHex = try c.decodeIfPresent(String.self, forKey: .colorHex)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+    }
 }
 
 public struct Plan: Codable, Identifiable, Hashable, Sendable {
@@ -78,6 +99,26 @@ public struct Plan: Codable, Identifiable, Hashable, Sendable {
         self.stoppedAt = stoppedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, medicationId, name, startDate, durationDays, schedule, stoppedAt, createdAt, updatedAt
+    }
+
+    /// `id`/`schedule`/timestamp'ы терпимы к отсутствию (импорт medplan/1);
+    /// `medicationId` обязателен — связь плана с лекарством (в medplan/1 её
+    /// проставляет коде импорта после создания Medication).
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        medicationId = try c.decode(UUID.self, forKey: .medicationId)
+        name = try c.decode(String.self, forKey: .name)
+        startDate = try c.decodeIfPresent(CivilDate.self, forKey: .startDate)
+        durationDays = try c.decode(Int.self, forKey: .durationDays)
+        schedule = try c.decodeIfPresent(DayGrid.self, forKey: .schedule) ?? DayGrid()
+        stoppedAt = try c.decodeIfPresent(CivilDate.self, forKey: .stoppedAt)
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
     }
 }
 
@@ -162,6 +203,22 @@ public struct Intake: Codable, Identifiable, Hashable, Sendable {
         self.actualDose = actualDose
         self.takenAt = takenAt
         self.doseOverride = doseOverride
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, planId, day, status, actualDose, takenAt, doseOverride
+    }
+
+    /// `id` терпим к отсутствию (генерируется); `planId`/`day` обязательны.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        planId = try c.decode(UUID.self, forKey: .planId)
+        day = try c.decode(Int.self, forKey: .day)
+        status = try c.decodeIfPresent(Status.self, forKey: .status)
+        actualDose = try c.decodeIfPresent(Double.self, forKey: .actualDose)
+        takenAt = try c.decodeIfPresent(Date.self, forKey: .takenAt)
+        doseOverride = try c.decodeIfPresent(Double.self, forKey: .doseOverride)
     }
 }
 
