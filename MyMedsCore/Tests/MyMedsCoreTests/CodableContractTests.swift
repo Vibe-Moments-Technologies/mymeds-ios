@@ -74,7 +74,7 @@ final class CodableContractTests: XCTestCase {
 
     func testNotifyWindowRoundTrip() throws {
         let window = NotifyWindow(startHour: 20, endHour: 23, intervalMinutes: 30)
-        let med = Medication(name: "Акнекутан", unit: .mg, form: "капсулы 8 мг",
+        let med = Medication(name: "Акнекутан", form: "капсулы 8 мг", unit: .mg,
                              intakeRule: "во время ужина, с жирной пищей",
                              cumulativeTarget: 8500, weightKg: 68, notifyWindow: window,
                              createdAt: Date(timeIntervalSince1970: 0))
