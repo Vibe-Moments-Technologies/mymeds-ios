@@ -57,7 +57,9 @@ public final class StorageService: @unchecked Sendable {
 
         var coordinationError: NSError?
         var writeError: Error?
-        coordinator.coordinate(writingItemAt: fileURL, options: [.forReplacing], error: &coordinationError) { url in
+        let options: NSFileCoordinator.WritingOptions =
+            fm.fileExists(atPath: fileURL.path) ? [.forReplacing] : []
+        coordinator.coordinate(writingItemAt: fileURL, options: options, error: &coordinationError) { url in
             do {
                 if self.fm.fileExists(atPath: url.path) {
                     if self.fm.fileExists(atPath: self.backupURL.path) {

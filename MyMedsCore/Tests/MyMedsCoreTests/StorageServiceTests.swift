@@ -63,8 +63,8 @@ final class StorageServiceTests: XCTestCase {
         try storage.save(sampleData(medName: "Живое"))
         try storage.save(sampleData(medName: "Последнее"))
         try Data("not json at all".utf8).write(to: storage.fileURL)
-        // .bak содержит «Последнее» (снимок перед перезаписью)
-        XCTAssertEqual(storage.load()?.medications.first?.name, "Последнее")
+        // .bak — снимок ПЕРЕД последней перезаписью, то есть «Живое» (§9)
+        XCTAssertEqual(storage.load()?.medications.first?.name, "Живое")
     }
 
     func testSaveRejectsInvalidDataAndWritesNothing() {
