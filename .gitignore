@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Xcode — проект генерируется XcodeGen (project.yml — источник истины)
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+
+# SPM
+.build/
+.swiftpm/
+
+# CI-артефакты
+dist/
+dist_version/
+release_notes.md
+
+# Python
+__pycache__/
+venv/
+
+# Локальные справочные клоны
+_krasava_ref/

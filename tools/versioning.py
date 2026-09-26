@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""
+tools/versioning.py — единый генератор версий для всех CI-каналов.
+
+Порт механизма krasava-app, только iOS (Android убран).
+
+Каналы и форматы:
+  stable   тег v26.1 / v26.1.1      → версия 26.1 / 26.1.1
+  beta|rc  тег v26.1-beta.1 / -rc.1 → версия 26.1-beta.1 (prerelease)
+  dev      push в main              → {RELEASE_VERSION}-dev.<номер линии> (rolling preview)
+  contrib  ручная сборка ветки      → {RELEASE_VERSION}-contrib.<run_number>
+
+Числовой BUILD_NUMBER (CFBundleVersion) = epoch-секунды, вычисленные ОДИН раз
+в resolve-джобе запуска (tools/versioning.py resolve). Все остальные джобы
+обязаны брать готовое число через `--build-id
+${{ needs.resolve.outputs.build_id }}` — иначе IPA и фид разойдутся.
+github.run_started_at в выражениях workflow рендерится ПУСТЫМ (свойство
+контекста не существует) — полагаться на него нельзя.
+
+Команды:
+  resolve — вычислить версию и вывести в $GITHUB_OUTPUT (файлы не трогает)
+  prepare — resolve + патч AppVersion.swift / Info.plist
+
+Версия в репозитории живёт ТОЛЬКО в AppVersion.releaseVersion (линия
+разработки, YY.X). Полные версии с суффиксами в репо не коммитятся — их
+подставляет CI. Никогда не хардкодь версии в workflow напрямую.
+"""
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+APP_VERSION_FILE = "MyMedsCore/Sources/MyMedsCore/AppVersion.swift"
+PLIST_FILE = "MyMeds/Info.plist"
+
+# v26.1 | v26.1.1 | v26.1-beta.1 | v26.1-rc.2
+TAG_RE = re.compile(r"^v(\d+\.\d+(?:\.\d+)?)(?:-(beta|rc)\.(\d+))?$")
+
+# Потолок схемы epoch-секунд — запас до 2038 года.
+MAX_BUILD_ID = 2_147_483_647
+
+
+def read_release_version():
+    content = Path(APP_VERSION_FILE).read_text(encoding="utf-8")
+    m = re.search(r'static\s+let\s+releaseVersion\s*=\s*"([^"]+)"', content)
+    if not m:
+        sys.exit(f"Не найдена версия в {APP_VERSION_FILE}")
+    return m.group(1).strip()
+
+
+def short_sha():
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], text=True
+        ).strip()
+    except Exception:
+        sha = os.environ.get("GITHUB_SHA", "local")
+        return sha[:8] if sha else "local"
+
+
+def compute_build_id(build_time):
+    """BUILD_NUMBER из ISO8601 времени или текущего времени.
+
+    Вызывается ТОЛЬКО в resolve-джобе (один момент на весь запуск).
+    Пустая строка == не задано == now(): свойство github.run_started_at
+    не существует и рендерится пустым, молча подменяясь «сейчас».
+    """
+    if build_time:
+        # например "2026-09-10T10:07:08Z"
+        dt = datetime.fromisoformat(build_time.replace("Z", "+00:00"))
+        bid = int(dt.timestamp())
+    else:
+        bid = int(datetime.now(timezone.utc).timestamp())
+    if bid > MAX_BUILD_ID:
+        sys.exit(f"build id {bid} превышает Int32 max ({MAX_BUILD_ID}). Смените схему.")
+    return bid
+
+
+def next_dev_number(prev_version):
+    """Номер дев-сборки ТЕКУЩЕЙ линии: «…26.1-dev.17…» → 18, смена линии → 1.
+
+    prev_version — имя rolling-релиза `preview` (последняя ОПУБЛИКОВАННАЯ
+    дев-версия), не github.run_number: отменённые прогоны не съедают номер,
+    при смене releaseVersion счётчик сбрасывается в 1.
+    """
+    m = prev_version and re.search(r"(\d+\.\d+(?:\.\d+)?)-dev\.(\d+)", prev_version)
+    if m and m.group(1) == read_release_version():
+        return int(m.group(2)) + 1
+    return 1
+
+
+def resolve(channel, tag, run_number, build_id, prev_version=None):
+    if tag:
+        m = TAG_RE.match(tag.strip())
+        if not m:
+            sys.exit(
+                f"Некорректный тег '{tag}'. Ожидается v26.1, v26.1.1, "
+                f"v26.1-beta.1 или v26.1-rc.1"
+            )
+        version = m.group(1)
+        channel = m.group(2) or "stable"
+        if m.group(2):
+            version += f"-{m.group(2)}.{m.group(3)}"
+    elif channel == "dev":
+        version = f"{read_release_version()}-dev.{next_dev_number(prev_version)}"
+    elif channel == "contrib":
+        version = f"{read_release_version()}-contrib.{run_number}"
+    else:
+        sys.exit("Для канала stable/beta/rc нужен --tag, для dev/contrib --channel")
+
+    return {
+        "version": version,
+        "channel": channel,
+        "prerelease": "true" if channel != "stable" else "false",
+        "build_id": str(build_id),
+        "commit_sha": short_sha(),
+        "prev_version": prev_version or "",
+    }
+
+
+def numeric_core(version):
+    """26.1-dev.151 → 26.1 (для CFBundleShortVersionString, iOS любит числовые)."""
+    return version.split("+")[0].split("-")[0]
+
+
+def patch_files(info):
+    version = info["version"]
+    channel = info["channel"]
+    build_id = info["build_id"]
+    commit_sha = info["commit_sha"]
+
+    # 1) AppVersion.swift: полный versionName + канал + числовой код + sha
+    path = Path(APP_VERSION_FILE)
+    c = path.read_text(encoding="utf-8")
+    c = re.sub(
+        r'static let versionName = (?:releaseVersion|"[^"]*")',
+        f'static let versionName = "{version}"', c)
+    c = re.sub(r'static let buildChannel = "[^"]*"',
+               f'static let buildChannel = "{channel}"', c)
+    c = re.sub(r'static let buildNumber = \d+',
+               f'static let buildNumber = {build_id}', c)
+    c = re.sub(r'static let commitSha = "[^"]*"',
+               f'static let commitSha = "{commit_sha}"', c)
+    path.write_text(c, encoding="utf-8")
+    print(f"patched {APP_VERSION_FILE}")
+
+    # 2) Info.plist: числовая база версии + числовой код сборки
+    path = Path(PLIST_FILE)
+    p = path.read_text(encoding="utf-8")
+    p = re.sub(r'(<key>CFBundleShortVersionString</key>\s*<string>)[^<]+(</string>)',
+               rf'\g<1>{numeric_core(version)}\g<2>', p)
+    p = re.sub(r'(<key>CFBundleVersion</key>\s*<string>)[^<]+(</string>)',
+               rf'\g<1>{build_id}\g<2>', p)
+    path.write_text(p, encoding="utf-8")
+    print(f"patched {PLIST_FILE}")
+
+
+def emit(info):
+    out_file = os.environ.get("GITHUB_OUTPUT")
+    if out_file:
+        with open(out_file, "a", encoding="utf-8") as f:
+            for k, v in info.items():
+                f.write(f"{k}={v}\n")
+    print("==========================================")
+    print("VERSION RESOLVED")
+    print(json.dumps(info, indent=2, ensure_ascii=False))
+    print("==========================================")
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Единый генератор версий CI")
+    ap.add_argument("command", choices=["resolve", "prepare"])
+    ap.add_argument("--channel", default=None,
+                    help="dev | contrib (для тегов не нужен — канал выводится из тега)")
+    ap.add_argument("--tag", default=None,
+                    help="Тег релиза: v26.1, v26.1.1, v26.1-beta.1, v26.1-rc.1")
+    ap.add_argument("--run-number", type=int, default=0,
+                    help="github.run_number (номер contrib-сборки; dev больше не использует)")
+    ap.add_argument("--prev-version", default=None,
+                    help="Имя rolling-релиза preview (для канала dev): из него "
+                         "берётся предыдущий номер той же линии +1, смена линии → 1")
+    ap.add_argument("--build-id", type=int, default=None,
+                    help="Готовый BUILD_NUMBER из needs.resolve.outputs. "
+                         "Обязателен для prepare без --build-time — число "
+                         "вычисляется один раз на запуск (resolve-джоба).")
+    ap.add_argument("--build-time", default=None,
+                    help="ISO8601 момента запуска. Только для resolve-джобы "
+                         "(или локальных тестов); иначе берётся now().")
+    args = ap.parse_args()
+
+    if not args.tag and not args.channel:
+        sys.exit("Нужен --tag или --channel")
+    if args.command == "prepare" and not args.build_id and not args.build_time:
+        sys.exit("prepare требует --build-id ${{ needs.resolve.outputs.build_id }} "
+                 "(или --build-time для локального теста) — одно число на весь запуск")
+
+    build_id = args.build_id if args.build_id else compute_build_id(args.build_time)
+    info = resolve(args.channel, args.tag, args.run_number, build_id, args.prev_version)
+    if args.command == "prepare":
+        patch_files(info)
+    emit(info)
+
+
+if __name__ == "__main__":
+    main()

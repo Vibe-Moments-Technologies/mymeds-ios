@@ -1,0 +1,50 @@
+name: MyMeds
+
+options:
+  bundleIdPrefix: com.l1ratch
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: ru
+
+packages:
+  MyMedsCore:
+    path: MyMedsCore
+
+targets:
+  MyMeds:
+    type: application
+    platform: iOS
+    sources:
+      - path: MyMeds
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+    dependencies:
+      - package: MyMedsCore
+        product: MyMedsCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.l1ratch.mymeds
+        INFOPLIST_FILE: MyMeds/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: MyMeds/MyMeds.entitlements
+        SWIFT_VERSION: "5.10"
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: 26.1
+        CURRENT_PROJECT_VERSION: 1
+
+schemes:
+  MyMeds:
+    build:
+      targets:
+        MyMeds: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

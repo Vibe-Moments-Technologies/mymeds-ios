@@ -1,0 +1,967 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конструктор планов приёма лекарств</title>
+    <!-- Подключаем шрифт Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: rgba(20, 26, 38, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-glow: #3b82f6;
+            --accent-glow-rgb: 59, 130, 246;
+            --accent-success: #10b981;
+            --accent-danger: #ef4444;
+            --font-main: 'Inter', sans-serif;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        h1, h2, h3 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: var(--font-main);
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: var(--font-main);
+            font-weight: 500;
+            font-size: 14px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--accent-glow);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger {
+            background: var(--accent-danger);
+            color: #ffffff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Настройка шаблона */
+        .template-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .template-box h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .template-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Календарная сетка дней */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .days-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .day-cell {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .day-cell:hover {
+            border-color: var(--accent-glow);
+            background: rgba(59, 130, 246, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .day-cell.active-selection {
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        .day-num {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .day-dose {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-glow);
+            text-align: right;
+        }
+
+        .day-meds {
+            font-size: 9px;
+            color: var(--accent-success);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Модальное окно редактирования дня */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #111827;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: var(--transition);
+        }
+
+        .modal.open .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Дополнительные лекарства */
+        .med-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .med-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .med-remove-btn {
+            color: var(--accent-danger);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .med-days-selector {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .med-days-selector span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .med-days-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .med-day-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .med-day-btn.selected {
+            background: var(--accent-success);
+            color: #ffffff;
+            border-color: var(--accent-success);
+        }
+
+        .med-days-quick {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .med-quick-lnk {
+            font-size: 11px;
+            color: var(--accent-glow);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Правая колонка с JSON */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: sticky;
+            top: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .right-panel {
+                position: static;
+            }
+        }
+
+        .json-preview {
+            background: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #34d399;
+            max-height: 280px;
+            min-height: 120px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .alert {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🧩 Конструктор планов приёма лекарств</h1>
+        <p>Сформируйте структуру нового блока (схему основного и дополнительных лекарств) и отправьте сгенерированный JSON в Telegram-бот.</p>
+    </header>
+
+    <!-- Левая колонка: Форма и настройки -->
+    <div class="main-panel">
+        
+        <!-- Параметры блока -->
+        <div class="card">
+            <h2 class="section-title">📦 Параметры блока</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="block-name">Название блока</label>
+                    <input type="text" id="block-name" value="Блок 3" placeholder="Например: Блок 3">
+                </div>
+                <div class="form-group">
+                    <label for="block-duration">Длительность блока</label>
+                    <select id="block-duration">
+                        <option value="28">4 недели (28 дней) - по умолчанию</option>
+                        <option value="42">6 недель (42 дня)</option>
+                        <option value="30">30 дней</option>
+                        <option value="56">8 недель (56 дней)</option>
+                        <option value="custom">Указать вручную в днях...</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-days-group" style="display: none;">
+                    <label for="block-custom-days">Дней в блоке</label>
+                    <input type="number" id="block-custom-days" value="28" min="1" max="120">
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной препарат: Акнекутан -->
+        <div class="card">
+            <h2 class="section-title">💊 Основной препарат (Акнекутан)</h2>
+            
+            <div class="template-box">
+                <h3>Заполнить быстро по шаблону</h3>
+                <div class="template-buttons">
+                    <button class="btn btn-secondary" onclick="applyMainTemplate('daily', 16)">Ежедневно 16 мг</button>
+                    <button class="btn btn-secondary" onclick="applyMainTemplate('daily', 32)">Ежедневно 32 мг</button>
+                    <button class="btn btn-secondary" onclick="applyMainTemplate('alternate', [32, 40])">Чередование 32 / 40 мг</button>
+                    <button class="btn btn-secondary" onclick="applyMainTemplate('alternate', [16, 24])">Чередование 16 / 24 мг</button>
+                    <button class="btn btn-secondary" onclick="applyMainTemplate('daily', 24)">Ежедневно 24 мг</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 10px; font-size: 13px; color: var(--text-secondary);">
+                Нажмите на любой день в сетке ниже для индивидуальной настройки его дозы.
+            </div>
+
+            <div class="days-grid" id="days-grid">
+                <!-- Генерируется скриптом -->
+            </div>
+        </div>
+
+        <!-- Дополнительные лекарства -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <h2 style="font-size: 18px; border:none; margin:0; padding:0;">🌿 Дополнительные лекарства</h2>
+                <button class="btn btn-secondary" onclick="addMedication()" style="padding: 6px 12px; font-size: 12px;">➕ Добавить</button>
+            </div>
+            
+            <div id="medications-list">
+                <!-- Список доп. лекарств -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Правая колонка: Предпросмотр JSON -->
+    <div class="right-panel">
+        <div class="card" style="display: flex; flex-direction: column; flex-grow: 1; gap: 15px;">
+            <h2 class="section-title" style="margin-bottom: 0; border: none; padding: 0;">💾 Результат JSON</h2>
+            <p style="font-size: 12px; color: var(--text-secondary);">Этот код сформирован автоматически. Вы можете скопировать его или скачать файл.</p>
+            
+            <div class="json-preview" id="json-preview">{}</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button class="btn btn-secondary" onclick="copyJsonText()">📋 Копировать</button>
+                <button class="btn btn-primary" onclick="downloadJsonFile()">📥 Скачать .json</button>
+            </div>
+
+            <div class="alert alert-success" id="info-alert">
+                💡 <b>Как загрузить в бот?</b><br>
+                Сохраните этот файл как <b>.json</b> и отправьте его сообщением вашему Telegram-боту. Бот распознает файл и предложит применить настройки.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования дозы дня -->
+<div class="modal" id="day-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">День Х</h3>
+            <button onclick="closeModal()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="modal-day-dose">Доза Акнекутана (мг)</label>
+                <input type="number" id="modal-day-dose" min="0" max="120" value="16">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+            <button class="btn btn-primary" onclick="saveDayDose()">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Глобальное состояние
+    let blockName = "Блок 3";
+    let durationDays = 28;
+    let mainDoses = {}; // dayNum -> dose_mg
+    let medications = []; // массив объектов доп. лекарств
+    let selectedDayForEdit = null;
+
+    // Регистрация элементов
+    const blockNameInput = document.getElementById('block-name');
+    const blockDurationSelect = document.getElementById('block-duration');
+    const customDaysGroup = document.getElementById('custom-days-group');
+    const blockCustomDaysInput = document.getElementById('block-custom-days');
+    const daysGrid = document.getElementById('days-grid');
+    const medicationsList = document.getElementById('medications-list');
+    const jsonPreview = document.getElementById('json-preview');
+    const dayModal = document.getElementById('day-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDayDose = document.getElementById('modal-day-dose');
+
+    // Инициализация
+    function init() {
+        // Устанавливаем дефолтные дозы основного препарата (например 16мг)
+        initDoses(16);
+        
+        // Добавляем по умолчанию Витамин Е
+        medications.push({
+            id: 'vitamin_e',
+            title: 'Витамин E',
+            dose_text: '1 капсула',
+            notify_start_hour: 9,
+            notify_end_hour: 12,
+            notify_interval_min: 60,
+            active_days: Array.from({length: 28}, (_, i) => i + 1) // все 28 дней
+        });
+
+        renderDaysGrid();
+        renderMedications();
+        updateJsonPreview();
+
+        // Слушатели событий
+        blockNameInput.addEventListener('input', (e) => {
+            blockName = e.target.value;
+            updateJsonPreview();
+        });
+
+        blockDurationSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                customDaysGroup.style.display = 'flex';
+                durationDays = parseInt(blockCustomDaysInput.value) || 28;
+            } else {
+                customDaysGroup.style.display = 'none';
+                durationDays = parseInt(e.target.value);
+            }
+            adjustDosesArrayLength();
+            renderDaysGrid();
+            renderMedications();
+            updateJsonPreview();
+        });
+
+        blockCustomDaysInput.addEventListener('input', (e) => {
+            durationDays = parseInt(e.target.value) || 28;
+            adjustDosesArrayLength();
+            renderDaysGrid();
+            renderMedications();
+            updateJsonPreview();
+        });
+    }
+
+    function initDoses(defaultDose) {
+        mainDoses = {};
+        for(let d = 1; d <= durationDays; d++) {
+            mainDoses[d] = defaultDose;
+        }
+    }
+
+    function adjustDosesArrayLength() {
+        const currentDays = Object.keys(mainDoses).length;
+        if (durationDays > currentDays) {
+            for (let d = currentDays + 1; d <= durationDays; d++) {
+                mainDoses[d] = mainDoses[currentDays] || 16;
+            }
+        } else if (durationDays < currentDays) {
+            for (let d = currentDays; d > durationDays; d--) {
+                delete mainDoses[d];
+            }
+        }
+
+        // Обновляем активные дни для доп. лекарств
+        medications.forEach(med => {
+            med.active_days = med.active_days.filter(d => d <= durationDays);
+        });
+    }
+
+    // Заполнение основного препарата по шаблону
+    function applyMainTemplate(type, params) {
+        if (type === 'daily') {
+            for (let d = 1; d <= durationDays; d++) {
+                mainDoses[d] = params;
+            }
+        } else if (type === 'alternate') {
+            const [val1, val2] = params;
+            for (let d = 1; d <= durationDays; d++) {
+                mainDoses[d] = (d % 2 !== 0) ? val1 : val2;
+            }
+        }
+        renderDaysGrid();
+        updateJsonPreview();
+    }
+
+    // Генерация сетки дней
+    function renderDaysGrid() {
+        daysGrid.innerHTML = '';
+        for (let d = 1; d <= durationDays; d++) {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            cell.onclick = () => openDayEdit(d);
+
+            const numSpan = document.createElement('span');
+            numSpan.className = 'day-num';
+            numSpan.textContent = `День ${d}`;
+
+            const doseDiv = document.createElement('div');
+            doseDiv.className = 'day-dose';
+            doseDiv.textContent = `${mainDoses[d]}мг`;
+
+            const medsDiv = document.createElement('div');
+            medsDiv.className = 'day-meds';
+            
+            // Проверить, есть ли доп. лекарства в этот день
+            const dayMeds = medications
+                .filter(med => med.active_days.includes(d))
+                .map(med => med.title);
+            
+            if (dayMeds.length > 0) {
+                medsDiv.textContent = `+ ${dayMeds.join(', ')}`;
+            }
+
+            cell.appendChild(numSpan);
+            cell.appendChild(doseDiv);
+            cell.appendChild(medsDiv);
+            daysGrid.appendChild(cell);
+        }
+    }
+
+    // Редактирование конкретного дня
+    function openDayEdit(dayNum) {
+        selectedDayForEdit = dayNum;
+        modalTitle.textContent = `Редактирование дня ${dayNum}`;
+        modalDayDose.value = mainDoses[dayNum];
+        dayModal.classList.add('open');
+    }
+
+    function closeModal() {
+        dayModal.classList.remove('open');
+        selectedDayForEdit = null;
+    }
+
+    function saveDayDose() {
+        const val = parseInt(modalDayDose.value);
+        if (!isNaN(val) && val >= 0 && val <= 120) {
+            mainDoses[selectedDayForEdit] = val;
+            renderDaysGrid();
+            updateJsonPreview();
+            closeModal();
+        }
+    }
+
+    // Добавление лекарства
+    function addMedication() {
+        const id = 'med_' + Date.now();
+        medications.push({
+            id: id,
+            title: 'Новое лекарство',
+            dose_text: '1 капсула',
+            notify_start_hour: 9,
+            notify_end_hour: 12,
+            notify_interval_min: 60,
+            active_days: Array.from({length: durationDays}, (_, i) => i + 1)
+        });
+        renderMedications();
+        renderDaysGrid();
+        updateJsonPreview();
+    }
+
+    // Удаление лекарства
+    function removeMedication(id) {
+        medications = medications.filter(med => med.id !== id);
+        renderMedications();
+        renderDaysGrid();
+        updateJsonPreview();
+    }
+
+    // Отрисовка списка лекарств
+    function renderMedications() {
+        medicationsList.innerHTML = '';
+        if (medications.length === 0) {
+            medicationsList.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: 20px 0; font-size: 14px;">Дополнительных лекарств нет.</div>';
+            return;
+        }
+
+        medications.forEach((med, index) => {
+            const item = document.createElement('div');
+            item.className = 'med-item';
+
+            item.innerHTML = `
+                <div class="med-item-header">
+                    <h3 style="font-size: 15px;">🌿 Доп. лекарство #${index + 1}</h3>
+                    <button class="med-remove-btn" onclick="removeMedication('${med.id}')">🗑 Удалить</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Название препарата</label>
+                        <input type="text" value="${med.title}" oninput="updateMedProp('${med.id}', 'title', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Дозировка (текст)</label>
+                        <input type="text" value="${med.dose_text}" oninput="updateMedProp('${med.id}', 'dose_text', this.value)">
+                    </div>
+                </div>
+                <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                    <div class="form-group">
+                        <label>Старт напоминаний (ч)</label>
+                        <input type="number" min="0" max="23" value="${med.notify_start_hour}" oninput="updateMedProp('${med.id}', 'notify_start_hour', parseInt(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label>Конец напоминаний (ч)</label>
+                        <input type="number" min="0" max="23" value="${med.notify_end_hour}" oninput="updateMedProp('${med.id}', 'notify_end_hour', parseInt(this.value))">
+                    </div>
+                    <div class="form-group">
+                        <label>Интервал (мин)</label>
+                        <input type="number" min="5" max="360" value="${med.notify_interval_min}" oninput="updateMedProp('${med.id}', 'notify_interval_min', parseInt(this.value))">
+                    </div>
+                </div>
+                <div class="med-days-selector">
+                    <span>Дни приёма лекарства:</span>
+                    <div class="med-days-grid" id="days-grid-${med.id}">
+                        <!-- Кнопки дней -->
+                    </div>
+                    <div class="med-days-quick">
+                        <span class="med-quick-lnk" onclick="quickSelectDays('${med.id}', 'all')">Все дни</span> · 
+                        <span class="med-quick-lnk" onclick="quickSelectDays('${med.id}', 'odd')">Нечётные</span> · 
+                        <span class="med-quick-lnk" onclick="quickSelectDays('${med.id}', 'even')">Чётные</span> · 
+                        <span class="med-quick-lnk" onclick="quickSelectDays('${med.id}', 'none')">Очистить</span>
+                    </div>
+                </div>
+            `;
+
+            medicationsList.appendChild(item);
+            renderMedDaysGrid(med);
+        });
+    }
+
+    function renderMedDaysGrid(med) {
+        const container = document.getElementById(`days-grid-${med.id}`);
+        container.innerHTML = '';
+
+        for (let d = 1; d <= durationDays; d++) {
+            const btn = document.createElement('button');
+            btn.className = `med-day-btn ${med.active_days.includes(d) ? 'selected' : ''}`;
+            btn.textContent = d;
+            btn.onclick = () => toggleMedDay(med.id, d);
+            container.appendChild(btn);
+        }
+    }
+
+    function toggleMedDay(medId, dayNum) {
+        const med = medications.find(m => m.id === medId);
+        if (med) {
+            if (med.active_days.includes(dayNum)) {
+                med.active_days = med.active_days.filter(d => d !== dayNum);
+            } else {
+                med.active_days.push(dayNum);
+                med.active_days.sort((a,b) => a - b);
+            }
+            renderMedications();
+            renderDaysGrid();
+            updateJsonPreview();
+        }
+    }
+
+    function quickSelectDays(medId, mode) {
+        const med = medications.find(m => m.id === medId);
+        if (!med) return;
+
+        if (mode === 'all') {
+            med.active_days = Array.from({length: durationDays}, (_, i) => i + 1);
+        } else if (mode === 'odd') {
+            med.active_days = Array.from({length: durationDays}, (_, i) => i + 1).filter(d => d % 2 !== 0);
+        } else if (mode === 'even') {
+            med.active_days = Array.from({length: durationDays}, (_, i) => i + 1).filter(d => d % 2 === 0);
+        } else if (mode === 'none') {
+            med.active_days = [];
+        }
+
+        renderMedications();
+        renderDaysGrid();
+        updateJsonPreview();
+    }
+
+    function updateMedProp(id, prop, value) {
+        const med = medications.find(m => m.id === id);
+        if (med) {
+            med[prop] = value;
+            updateJsonPreview();
+            
+            // Если изменилось название, обновим сетку дней
+            if (prop === 'title') {
+                renderDaysGrid();
+            }
+        }
+    }
+
+    // Сборка объекта и предпросмотр JSON
+    function generateBlockObject() {
+        // Форматируем основной препарат
+        const mainMedObj = {
+            id: 'main',
+            title: 'Акнекутан',
+            type: 'main',
+            schedule: {}
+        };
+        for (let d = 1; d <= durationDays; d++) {
+            mainMedObj.schedule[d] = {
+                dose_mg: mainDoses[d] || 0
+            };
+        }
+
+        // Форматируем доп. лекарства
+        const extraMeds = medications.map(med => {
+            const medSched = {};
+            for (let d = 1; d <= durationDays; d++) {
+                const isActive = med.active_days.includes(d);
+                medSched[d] = {
+                    active: isActive ? 1 : 0,
+                    notify_start_hour: med.notify_start_hour,
+                    notify_end_hour: med.notify_end_hour,
+                    notify_interval_min: med.notify_interval_min
+                };
+            }
+            return {
+                id: med.id === 'vitamin_e' ? 'vitamin_e' : med.id,
+                title: med.title,
+                type: 'additional',
+                dose_text: med.dose_text,
+                schedule: medSched
+            };
+        });
+
+        return {
+            name: blockName,
+            duration_days: durationDays,
+            medications: [mainMedObj, ...extraMeds]
+        };
+    }
+
+    function updateJsonPreview() {
+        const obj = generateBlockObject();
+        jsonPreview.textContent = JSON.stringify(obj, null, 2);
+    }
+
+    // Копирование
+    function copyJsonText() {
+        const text = jsonPreview.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('JSON успешно скопирован в буфер обмена!');
+        }).catch(err => {
+            alert('Не удалось скопировать JSON: ' + err);
+        });
+    }
+
+    // Скачивание
+    function downloadJsonFile() {
+        const text = jsonPreview.textContent;
+        const blob = new Blob([text], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        
+        // Превращаем имя блока в безопасное имя файла
+        const filename = blockName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '_') + '_plan.json';
+        
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Запуск
+    window.onload = init;
+</script>
+
+</body>
+</html>

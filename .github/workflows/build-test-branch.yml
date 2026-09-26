@@ -1,0 +1,163 @@
+name: 🧪 Contributor Test Build (IPA)
+
+# Сборка любой ветки/SHA руками (порт механизма krasava-app, только iOS):
+# только Actions Artifacts. НЕ трогает релизы, теги и gh-pages.
+# Версия {RELEASE_VERSION}-contrib.N, числовой код — epoch-секунды
+# (свежая contrib-сборка всегда ставится поверх старой, а следующий
+# стабильный релиз — поверх contrib).
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Ветка для сборки (пусто — текущая ветка из меню)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: 🧭 Resolve Build Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      build_id: ${{ steps.ver.outputs.build_id }}
+      commit_sha: ${{ steps.ver.outputs.commit_sha }}
+    steps:
+      - name: 📚 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch != '' && inputs.branch || github.ref }}
+
+      # ЕДИНСТВЕННОЕ место вычисления номера сборки: один запуск = одно число
+      - name: 🧭 Resolve version
+        id: ver
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: python tools/versioning.py resolve --channel contrib --run-number "$RUN_NUMBER"
+
+  build_ipa:
+    name: 🍏 Test Build iOS Unsigned IPA
+    runs-on: macos-15
+    needs: resolve
+    outputs:
+      artifact_slug: ${{ steps.slug.outputs.artifact_slug }}
+    steps:
+      - name: 📚 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch != '' && inputs.branch || github.ref }}
+
+      - name: 🔖 Patch version files (contrib)
+        run: python3 tools/versioning.py prepare --channel contrib --run-number "${{ github.run_number }}" --build-id "${{ needs.resolve.outputs.build_id }}"
+
+      - name: 🏷️ Compute artifact slug
+        id: slug
+        env:
+          BRANCH: ${{ inputs.branch != '' && inputs.branch || github.ref_name }}
+        run: |
+          SLUG=$(python3 -c "import re,sys; print(re.sub(r'[^a-zA-Z0-9._-]','-',sys.argv[1])[:32].strip('-'))" "$BRANCH")
+          echo "artifact_slug=test-${SLUG}-${{ needs.resolve.outputs.commit_sha }}-r${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: 📦 Install XcodeGen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: 🛠️ Set Xcode Version
+        run: |
+          if [ -d "/Applications/Xcode_16.4.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_16.2.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          fi
+          xcodebuild -version
+
+      - name: 🏗️ Generate Xcode project
+        run: xcodegen generate
+
+      - name: 🧪 MyMedsCore unit tests
+        run: swift test --package-path MyMedsCore
+
+      - name: 🔨 Build iOS App (no codesign)
+        run: |
+          xcodebuild -scheme MyMeds \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build
+
+      - name: 📦 Package Unsigned IPA
+        run: |
+          mkdir -p Payload
+          APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+          echo "Found app at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
+          IPA_NAME="MyMeds-${{ steps.slug.outputs.artifact_slug }}.ipa"
+          zip -r "$IPA_NAME" Payload
+          rm -rf Payload
+          echo "IPA_NAME=$IPA_NAME" >> "$GITHUB_ENV"
+
+      - name: 📤 Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyMeds-${{ steps.slug.outputs.artifact_slug }}-IPA
+          path: ${{ env.IPA_NAME }}
+          if-no-files-found: error
+
+  test_summary:
+    name: 📋 Test Build Summary
+    runs-on: ubuntu-latest
+    needs: [resolve, build_ipa]
+    if: always() && needs.build_ipa.result == 'success'
+    steps:
+      - name: 📝 Post Step Summary
+        env:
+          BRANCH_NAME: ${{ inputs.branch != '' && inputs.branch || github.ref_name }}
+          SLUG: ${{ needs.build_ipa.outputs.artifact_slug || 'test' }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          COMMIT: ${{ needs.resolve.outputs.commit_sha }}
+          BUILD_ID: ${{ needs.resolve.outputs.build_id }}
+          IPA_STATUS: ${{ needs.build_ipa.result }}
+        run: |
+          python3 - << 'EOF'
+          import os
+
+          branch = os.environ.get("BRANCH_NAME", "")
+          slug = os.environ.get("SLUG", "test")
+          version = os.environ.get("VERSION", "")
+          commit = os.environ.get("COMMIT", "HEAD")
+          build_id = os.environ.get("BUILD_ID", "")
+          ipa_status = os.environ.get("IPA_STATUS", "")
+
+          ipa_badge = "✅ Готов" if ipa_status == "success" else ("⏭️ Пропущен" if ipa_status == "skipped" else "❌ Ошибка")
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if not summary_path:
+              raise SystemExit(0)
+
+          with open(summary_path, "a", encoding="utf-8") as f:
+              f.write("### 🧪 Тестовая сборка готова!\n\n")
+              f.write("| Параметр | Значение |\n")
+              f.write("| :--- | :--- |\n")
+              f.write(f"| 🌿 **Ветка** | `{branch}` |\n")
+              f.write(f"| 🏷️ **Версия** | `{version}` |\n")
+              f.write(f"| 📌 **Коммит** | `{commit}` |\n")
+              f.write(f"| 🔢 **Числовой код** | `{build_id}` |\n")
+              f.write(f"| 🍏 **iOS Unsigned IPA** | {ipa_badge} |\n\n")
+              f.write("#### 📦 Артефакты сборки:\n")
+              if ipa_status == "success":
+                  f.write(f"- 🍏 **iOS IPA:** `MyMeds-{slug}-IPA` (`MyMeds-{slug}.ipa`)\n")
+              f.write("\n")
+              f.write("> 💡 **Где скачать:** блок **Artifacts** внизу страницы запуска.\n")
+              f.write("> 🛡️ **Изоляция:** релизы, теги и gh-pages не затронуты.\n")
+          EOF

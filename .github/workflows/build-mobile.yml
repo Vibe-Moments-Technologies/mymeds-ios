@@ -1,0 +1,204 @@
+name: 🚀 Release Mobile (Tag v*)
+
+# Релизный сборщик (порт механизма krasava-app, только iOS). Запускается
+# ТОЛЬКО пушем тега v26.1 / v26.1.1 / v26.1-beta.1 / v26.1-rc.1 или вручную
+# (dispatch с указанием тега). Канал выводится из тега: чистый тег → stable
+# (+ version.json + apps.json), beta/rc → иммутабельный prerelease.
+# Push в main сюда НЕ попадает — дев-сборки main собирает preview-main.yml.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Тег релиза, например v26.1 или v26.1-beta.1'
+        required: true
+        type: string
+      publish:
+        description: 'Публиковать релиз и фиды? Выключи для сборки без публикации.'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    name: 🧭 Resolve Release Channel
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      channel: ${{ steps.ver.outputs.channel }}
+      prerelease: ${{ steps.ver.outputs.prerelease }}
+      build_id: ${{ steps.ver.outputs.build_id }}
+      commit_sha: ${{ steps.ver.outputs.commit_sha }}
+    steps:
+      # Пуш тега → checkout тега; ручной запуск → main (тег может не существовать
+      # в репо — он нужен только для парсинга версии, не для checkout).
+      - name: 📚 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref || 'main' }}
+
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 🧭 Validate tag & resolve version
+        id: ver
+        env:
+          TAG: ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+        run: python tools/versioning.py resolve --tag "$TAG"
+
+  build_ipa:
+    name: 🍏 Build iOS Unsigned IPA
+    runs-on: macos-15
+    needs: resolve
+    steps:
+      - name: 📚 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref || 'main' }}
+
+      - name: 🔖 Patch version files
+        env:
+          TAG: ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+        run: python3 tools/versioning.py prepare --tag "$TAG" --build-id "${{ needs.resolve.outputs.build_id }}"
+
+      - name: 📦 Install XcodeGen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: 🛠️ Set Xcode Version
+        run: |
+          if [ -d "/Applications/Xcode_16.4.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_16.2.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          fi
+          xcodebuild -version
+
+      - name: 🏗️ Generate Xcode project
+        run: xcodegen generate
+
+      - name: 🧪 MyMedsCore unit tests
+        run: swift test --package-path MyMedsCore
+
+      - name: 🔨 Build iOS App (no codesign)
+        run: |
+          xcodebuild -scheme MyMeds \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build
+
+      - name: 📦 Package Unsigned IPA
+        env:
+          CHANNEL: ${{ needs.resolve.outputs.channel }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+        run: |
+          mkdir -p Payload
+          APP_PATH=$(find build -name "*.app" -type d | head -n 1)
+          echo "Found app at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
+          if [ "$CHANNEL" = "stable" ]; then
+            # неизменное имя — на него ссылаются фиды и старые подписки
+            IPA_NAME="MyMeds.ipa"
+          else
+            IPA_NAME="MyMeds-v${VERSION}.ipa"
+          fi
+          zip -r "$IPA_NAME" Payload
+          rm -rf Payload
+          echo "IPA_NAME=$IPA_NAME" >> "$GITHUB_ENV"
+
+      - name: 📤 Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyMeds-IPA
+          path: ${{ env.IPA_NAME }}
+          if-no-files-found: error
+
+  publish_release:
+    name: 🚀 Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: [resolve, build_ipa]
+    # При пуше тега публикуем всегда; при ручном запуске — по флагу publish.
+    # inputs.publish приходит строкой "true"/"false" — сравниваем со строкой.
+    if: |
+      always() &&
+      needs.build_ipa.result == 'success' &&
+      (github.event_name == 'push' || inputs.publish == 'true')
+    steps:
+      - name: 📚 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref || 'main' }}
+
+      - name: 📥 Download IPA Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MyMeds-IPA
+          path: download_ipa
+        continue-on-error: true
+
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 🚀 Publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANNEL: ${{ needs.resolve.outputs.channel }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          BUILD: ${{ needs.resolve.outputs.build_id }}
+          SHA: ${{ needs.resolve.outputs.commit_sha }}
+        run: |
+          IPA=$(find download_ipa -name '*.ipa' 2>/dev/null | head -n 1)
+          ARGS=""
+          [ -n "$IPA" ] && ARGS="--ipa $IPA"
+          python tools/publish_release.py --channel "$CHANNEL" --version "$VERSION" --build-number "$BUILD" --commit-sha "$SHA" $ARGS
+
+  update_version_feed:
+    name: 📡 Update Version Feeds & GBox Sources
+    runs-on: ubuntu-latest
+    needs: [resolve, publish_release]
+    if: needs.publish_release.result == 'success'
+    steps:
+      - name: 📚 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📝 Generate feeds (stable/beta/rc)
+        env:
+          CHANNEL: ${{ needs.resolve.outputs.channel }}
+          VERSION: ${{ needs.resolve.outputs.version }}
+          BUILD: ${{ needs.resolve.outputs.build_id }}
+          SHA: ${{ needs.resolve.outputs.commit_sha }}
+        run: python tools/update_version_feed.py --channel "$CHANNEL" --version "$VERSION" --build-number "$BUILD" --commit-sha "$SHA" --out-dir dist_version
+
+      - name: 📋 Copy remote config
+        run: cp config.json dist_version/
+
+      - name: 🚀 Deploy feeds to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist_version
+          publish_branch: gh-pages
+          keep_files: true
