@@ -84,15 +84,11 @@ public struct Plan: Codable, Identifiable, Hashable, Sendable {
 /// Дневная сетка плана. Обёртка над [Int: DaySlot] ради объектной формы JSON
 /// `{"1": {...}}`: штатный Codable для [Int: X] кодирует массив пар и сломал бы
 /// контракт medplan/1 (§4). Ключи — только целые строки.
-public struct DayGrid: Codable, Hashable, Sendable, ExpressibleByDictionaryLiteral {
+public struct DayGrid: Codable, Hashable, Sendable {
     public var slots: [Int: DaySlot]
 
     public init(_ slots: [Int: DaySlot] = [:]) {
         self.slots = slots
-    }
-
-    public init(dictionaryLiteral elements: (Int, DaySlot)...) {
-        slots = Dictionary(uniqueKeysWithValues: elements)
     }
 
     public subscript(day: Int) -> DaySlot? {
@@ -100,7 +96,7 @@ public struct DayGrid: Codable, Hashable, Sendable, ExpressibleByDictionaryLiter
         set { slots[day] = newValue }
     }
 
-    private struct Key: CodingKey {
+    private struct DayKey: CodingKey {
         var stringValue: String
         var intValue: Int?
         init?(stringValue: String) { self.stringValue = stringValue }
@@ -108,7 +104,7 @@ public struct DayGrid: Codable, Hashable, Sendable, ExpressibleByDictionaryLiter
     }
 
     public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: Key.self)
+        let container = try decoder.container(keyedBy: DayKey.self)
         var result: [Int: DaySlot] = [:]
         for key in container.allKeys {
             guard let day = Int(key.stringValue) else {
@@ -122,9 +118,9 @@ public struct DayGrid: Codable, Hashable, Sendable, ExpressibleByDictionaryLiter
     }
 
     public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: Key.self)
+        var container = encoder.container(keyedBy: DayKey.self)
         for (day, slot) in slots {
-            guard let key = Key(stringValue: String(day)) else { continue }
+            guard let key = DayKey(stringValue: String(day)) else { continue }
             try container.encode(slot, forKey: key)
         }
     }
