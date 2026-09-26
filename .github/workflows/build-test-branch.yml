@@ -82,7 +82,23 @@ jobs:
         run: xcodegen generate
 
       - name: 🧪 MyMedsCore unit tests
-        run: swift test --package-path MyMedsCore
+        run: |
+          set -o pipefail
+          swift test --package-path MyMedsCore 2>&1 | tee swift-test.log
+
+      - name: 🚨 Surface test failures (annotations + summary)
+        if: failure()
+        run: |
+          [ -f swift-test.log ] || exit 0
+          grep -E 'error:|XCTAssert.*failed|Fatal error' swift-test.log | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          {
+            echo '### 🧪 Swift test failures'
+            echo '```'
+            grep -E 'error:|XCTAssert.*failed|Fatal error|Test Case.*failed' swift-test.log | head -60
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 🔨 Build iOS App (no codesign)
         run: |
