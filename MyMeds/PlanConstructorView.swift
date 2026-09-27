@@ -61,20 +61,7 @@ struct PlanConstructorView: View {
         NavigationStack {
             ZStack {
                 MeshGradientBackground()
-                ScrollView {
-                    VStack(spacing: 16) {
-                        levelPicker
-                        medSection
-                        planSection
-                        switch level {
-                        case .simple: break          // всё уже в базовой секции
-                        case .mode: patternSection
-                        case .pro: proSection
-                        }
-                        previewSection
-                    }
-                    .padding(16)
-                }
+                content
             }
             .navigationTitle("Новый план")
             .navigationBarTitleDisplayMode(.inline)
@@ -88,13 +75,37 @@ struct PlanConstructorView: View {
                 }
             }
             .sheet(isPresented: $showJSON) { jsonPreviewSheet }
-            .alert("Ошибка", isPresented: Binding(get: { errorText != nil },
-                                                  set: { if !$0 { errorText = nil } })) {
+            .alert("Ошибка", isPresented: errorBinding) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(errorText ?? "")
             }
         }
+    }
+
+    private var content: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                levelPicker
+                medSection
+                planSection
+                levelSection
+                previewSection
+            }
+            .padding(16)
+        }
+    }
+
+    private var levelSection: some View {
+        switch level {
+        case .simple: return EmptyView()      // всё уже в базовой секции
+        case .mode: return patternSection
+        case .pro: return proSection
+        }
+    }
+
+    private var errorBinding: Binding<Bool> {
+        Binding(get: { errorText != nil }, set: { if !$0 { errorText = nil } })
     }
 
     private var levelPicker: some View {
@@ -114,12 +125,12 @@ struct PlanConstructorView: View {
                     .foregroundStyle(.primary)
                 TextField("Название", text: $medName)
                     .glassField()
-                if level == .pro {
-                    Picker("Единица", selection: $medUnit) {
-                        ForEach(DoseUnit.allCases, id: \.self) { unit in
-                            Text(unit.title).tag(unit)
-                        }
+                Picker("Единица", selection: $medUnit) {
+                    ForEach(DoseUnit.allCases, id: \.self) { unit in
+                        Text(unit.title).tag(unit)
                     }
+                }
+                if level == .pro {
                     TextField("Форма (капсула…)", text: $form)
                         .glassField()
                     TextField("Правило приёма (после еды…)", text: $intakeRule)
@@ -131,12 +142,6 @@ struct PlanConstructorView: View {
                         TextField("Вес, кг (опционально)", text: $weightText)
                             .glassField()
                             .keyboardType(.decimalPad)
-                    }
-                } else {
-                    Picker("Единица", selection: $medUnit) {
-                        ForEach(DoseUnit.allCases, id: \.self) { unit in
-                            Text(unit.title).tag(unit)
-                        }
                     }
                 }
             }
