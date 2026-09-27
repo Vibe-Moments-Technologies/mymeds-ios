@@ -52,6 +52,13 @@ struct HomeView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        AnalyticsView()
+                    } label: {
+                        Image(systemName: "chart.bar.fill")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showSettings = true
                     } label: {
@@ -96,6 +103,8 @@ struct HomeView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                // Маскот = визуализация streak (§12), без хранения
+                MascotView(streak: Analytics.currentStreak(data: store.data))
             }
         }
     }
