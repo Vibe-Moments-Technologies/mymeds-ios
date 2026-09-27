@@ -129,6 +129,15 @@ public final class DataStore {
         try appJSONEncoder.encode(data)
     }
 
+    /// Сохранить созданный в конструкторе черновик (медикамент + план).
+    /// Инварианты §3 проверяются до записи.
+    public func insert(medication: Medication, plan: Plan) throws {
+        try plan.validate()
+        data.medications.append(medication)
+        data.plans.append(plan)
+        try persist()
+    }
+
     // MARK: - Настройки (§8: гибкость на лекарство)
 
     /// Перечитать с диска: в фоне данные мог изменить другой писатель

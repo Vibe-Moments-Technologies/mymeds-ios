@@ -14,6 +14,7 @@ struct MedicationsListView: View {
     }
 
     @State private var segment: Segment = .active
+    @State private var showConstructor = false
 
     private var today: CivilDate { .today() }
 
@@ -46,6 +47,15 @@ struct MedicationsListView: View {
 
                 ScrollView {
                     VStack(spacing: 12) {
+                        Button {
+                            showConstructor = true
+                        } label: {
+                            Label("Новый план", systemImage: "plus.circle.fill")
+                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(12)
+                        }
+                        .buttonStyle(GlassButtonStyle())
                         if segment == .active {
                             ForEach(activeMedications) { med in
                                 NavigationLink {
@@ -80,6 +90,9 @@ struct MedicationsListView: View {
         }
         .navigationTitle("Разделы")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showConstructor) {
+            PlanConstructorView()
+        }
     }
 
     private func emptyText(_ title: String, hint: String) -> some View {
