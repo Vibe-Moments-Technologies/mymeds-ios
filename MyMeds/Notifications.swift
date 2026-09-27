@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import WidgetKit
 import MyMedsCore
 
 /// Единственный экземпляр DataStore на процесс (§8: единственный писатель):
@@ -38,6 +39,8 @@ enum NotificationSetup {
     /// Скользящее окно (§8): отменить все pending → пересчитать из entries →
     /// поставить. Идемпотентно, без состояния «что уже запланировано».
     /// Вызывается при: запуске, foreground, отметке приёма, правках данных.
+    /// Здесь же перевзвод виджета (§8: widget reload) — одна точка на обе
+    /// производные от данных штуки.
     static func reschedule() {
         let plan = NotificationPlanner.plan(data: AppEnvironment.store.data)
         let center = UNUserNotificationCenter.current()
@@ -61,6 +64,7 @@ enum NotificationSetup {
             let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
             center.add(UNNotificationRequest(identifier: item.id, content: content, trigger: trigger))
         }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 

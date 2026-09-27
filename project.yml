@@ -26,12 +26,37 @@ targets:
         product: MyMedsCore
       - package: DesignSystem
         product: DesignSystem
+      - target: MyMedsWidget
+        embed: true
+        codeSign: false   # CI: CODE_SIGNING_ALLOWED=NO; локально Xcode подпишет сам
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.l1ratch.mymeds
         INFOPLIST_FILE: MyMeds/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: MyMeds/MyMeds.entitlements
+        SWIFT_VERSION: "5.10"
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: 26.1
+        CURRENT_PROJECT_VERSION: 1
+
+  MyMedsWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MyMedsWidget
+        excludes:
+          - Info.plist
+          - "*.entitlements"
+    dependencies:
+      - package: MyMedsCore
+        product: MyMedsCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.l1ratch.mymeds.widget
+        INFOPLIST_FILE: MyMedsWidget/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: MyMedsWidget/MyMedsWidget.entitlements
         SWIFT_VERSION: "5.10"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: 26.1

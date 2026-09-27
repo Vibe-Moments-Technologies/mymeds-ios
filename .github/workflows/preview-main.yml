@@ -12,6 +12,7 @@ on:
       - main
     paths:
       - 'MyMeds/**'
+      - 'MyMedsWidget/**'
       - 'MyMedsCore/**'
       - 'DesignSystem/**'
       - 'project.yml'
