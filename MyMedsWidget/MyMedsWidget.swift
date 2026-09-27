@@ -124,7 +124,9 @@ struct TodayWidgetView: View {
     /// тот же StorageService (App Group + NSFileCoordinator — §8).
     private func markButton(_ item: DataStore.DayItem, _ status: Intake.Status,
                             _ icon: String, _ color: Color) -> some View {
-        let selected = item.status == status
+        // item.status — производный IntakeStatus, status — сохраняемый Intake.Status;
+        // raw values совпадают ("taken"/"skipped")
+        let selected = item.status == IntakeStatus(rawValue: status.rawValue)
         return Button(intent: MarkIntakeIntent(planId: item.entry.planId.uuidString,
                                                 day: item.entry.day,
                                                 status: status)) {
