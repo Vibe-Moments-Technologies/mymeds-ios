@@ -37,14 +37,6 @@ extension IntakeStatus {
     }
 }
 
-/// «16 мг», «1 капсула» — целые дозы без хвоста .0
-func doseText(_ value: Double, unit: DoseUnit) -> String {
-    let num = value.truncatingRemainder(dividingBy: 1) == 0
-        ? String(Int(value))
-        : String(value)
-    return "\(num) \(unit.title)"
-}
-
 extension Medication {
     /// Акцентный цвет: colorHex лекарства, иначе палитра по умолчанию.
     var accent: Color {

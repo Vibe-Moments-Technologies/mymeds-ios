@@ -20,6 +20,15 @@ public enum DoseUnit: String, Codable, CaseIterable, Hashable, Sendable {
     }
 }
 
+/// «16 мг», «1 капсула» — целые дозы без хвоста .0. Единственный источник
+/// (Core): используется в UI и в тексте уведомлений.
+public func doseText(_ value: Double, unit: DoseUnit) -> String {
+    let num = value.truncatingRemainder(dividingBy: 1) == 0
+        ? String(Int(value))
+        : String(value)
+    return "\(num) \(unit.title)"
+}
+
 public struct Medication: Codable, Identifiable, Hashable, Sendable {
     public let id: UUID
     public var name: String

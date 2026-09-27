@@ -47,6 +47,11 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(item: $detailItem) { DayDetailSheet(item: $0) }
+            .onChange(of: store.data) { _, _ in
+                // Любая мутация (отметка/доза/импорт/настройки) → перевзвод
+                // скользящего окна уведомлений (§8: идемпотентный пересчёт).
+                NotificationSetup.reschedule()
+            }
             .alert("Ошибка", isPresented: errorBinding) {
                 Button("OK", role: .cancel) {}
             } message: {

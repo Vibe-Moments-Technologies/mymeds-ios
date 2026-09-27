@@ -2,10 +2,12 @@ import SwiftUI
 import MyMedsCore
 import DesignSystem
 import UniformTypeIdentifiers
+import UserNotifications
 
 /// Настройки (§12): кнопка-шестерёнка сверху Home.
 /// Данные: экспорт бэкапа, импорт medplan/1 (через предпросмотр) и
-/// mymeds-backup/1 (полное восстановление с подтверждением). Уведомления — этап 3.
+/// mymeds-backup/1 (полное восстановление с подтверждением).
+/// Уведомления: окна на лекарство, бюджет «X из 64», горизонт дней (§8).
 struct SettingsView: View {
     @Environment(DataStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -15,6 +17,8 @@ struct SettingsView: View {
     @State private var backupToRestore: PendingBackup?
     @State private var planToImport: PendingPlan?
     @State private var errorText: String?
+    @State private var editingMed: Medication?
+    @State private var authStatus: UNAuthorizationStatus?
 
     struct PendingBackup: Identifiable {
         let id = UUID()
@@ -55,10 +59,44 @@ struct SettingsView: View {
                         }
                         LabeledContent("Коммит") { Text(AppVersion.commitSha) }
                     }
-                    Section {
-                        Text("Уведомления появятся на этапе 3 (§14)")
+                    Section("Уведомления") {
+                        LabeledContent("Запланировано") {
+                            Text("\(notificationPlan.total) из \(NotificationPlanner.systemLimit)")
+                        }
+                        if notificationPlan.trimmed {
+                            Label("Бюджет плотный — интервалы укрупнены",
+                                  systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                        ForEach(store.data.medications) { med in
+                            Button {
+                                editingMed = med
+                            } label: {
+                                HStack {
+                                    Text(med.name)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Text(medWindowText(med))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                            }
+                        }
+                        Stepper("Горизонт: \(store.data.settings.notifyHorizonDays) дн.",
+                                value: horizonBinding, in: 1...7)
+                        if let auth = authStatus, auth != .authorized, auth != .provisional {
+                            Button("Разрешение не выдано — открыть настройки") {
+                                if let url = URL(string: UIApplication.openSettingsURLString) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.orange)
+                        }
                     }
                 }
                 .scrollContentBackground(.hidden)
@@ -78,6 +116,13 @@ struct SettingsView: View {
             }
             .sheet(item: $planToImport) { pending in
                 MedPlanImportSheet(file: pending.file, data: pending.data)
+            }
+            .sheet(item: $editingMed) { med in
+                NotifySettingsSheet(medication: med)
+            }
+            .task {
+                authStatus = await UNUserNotificationCenter.current()
+                    .notificationSettings().authorizationStatus
             }
             .confirmationDialog(
                 "Восстановить бэкап?",
@@ -104,6 +149,22 @@ struct SettingsView: View {
                 Text(errorText ?? "")
             }
         }
+    }
+
+    private var notificationPlan: NotificationPlan {
+        NotificationPlanner.plan(data: store.data)
+    }
+
+    private var horizonBinding: Binding<Int> {
+        Binding(get: { store.data.settings.notifyHorizonDays },
+                set: { newValue in try? store.setNotifyHorizon(days: newValue) })
+    }
+
+    private func medWindowText(_ med: Medication) -> String {
+        guard let w = med.notifyWindow else { return "выкл" }
+        let slots = notificationPlan.perMedication[med.id] ?? 0
+        return String(format: "%02d–%02d · %d мин · %d сл.",
+                      w.startHour, w.endHour, w.intervalMinutes, slots)
     }
 
     private func exportBackup() {

@@ -129,6 +129,33 @@ public final class DataStore {
         try appJSONEncoder.encode(data)
     }
 
+    // MARK: - Настройки (§8: гибкость на лекарство)
+
+    /// Перечитать с диска: в фоне данные мог изменить другой писатель
+    /// (Intent/делегат уведомлений, виджет-сценарии) — UI подхватывает их.
+    public func reload() {
+        if let loaded = storage.load() {
+            data = loaded
+        }
+    }
+
+    public func setNotifyHorizon(days: Int) throws {
+        guard days > 0 else {
+            throw ValidationError("Горизонт уведомлений должен быть > 0")
+        }
+        data.settings.notifyHorizonDays = days
+        try persist()
+    }
+
+    /// Окно напоминаний на лекарство; nil = выключить уведомления лекарства.
+    public func setNotifyWindow(_ window: NotifyWindow?, medicationId: UUID) throws {
+        guard let idx = data.medications.firstIndex(where: { $0.id == medicationId }) else {
+            throw ValidationError("Лекарство не найдено")
+        }
+        data.medications[idx].notifyWindow = window
+        try persist()
+    }
+
     // MARK: - Внутреннее
 
     private func upsert(_ intake: Intake) {
