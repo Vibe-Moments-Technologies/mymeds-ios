@@ -24,7 +24,7 @@ struct HomeView: View {
                             emptyState
                         } else {
                             ForEach(items) { item in
-                                TodayRow(
+                                IntakeRow(
                                     item: item,
                                     onDetail: { detailItem = item },
                                     onError: { errorText = $0 }
@@ -37,6 +37,20 @@ struct HomeView: View {
             }
             .navigationTitle("Сегодня")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        CalendarView()
+                    } label: {
+                        Image(systemName: "calendar")
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        MedicationsListView()
+                    } label: {
+                        Image(systemName: "list.bullet.rectangle")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showSettings = true
@@ -106,8 +120,9 @@ struct HomeView: View {
     }
 }
 
-/// Одна строка «Сегодня» = один Entry (§5). Отметка, сброс, детали/доза.
-struct TodayRow: View {
+/// Строка приёма = один Entry (§5). Один компонент на Home, календарь и
+/// сетку плана (§12): отметка, сброс, детали/доза.
+struct IntakeRow: View {
     let item: DataStore.DayItem
     var onDetail: () -> Void
     var onError: (String) -> Void

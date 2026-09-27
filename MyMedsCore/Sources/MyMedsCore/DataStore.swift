@@ -156,6 +156,16 @@ public final class DataStore {
         try persist()
     }
 
+    /// DayItem конкретного дня плана — для сетки плана и календаря.
+    /// nil = день без приёма или план не начат.
+    public func item(planId: UUID, day: Int, today: CivilDate = .today()) -> DayItem? {
+        guard let plan = plan(planId), let start = plan.startDate else { return nil }
+        let date = start.adding(days: day - 1)
+        return items(on: date, today: today).first {
+            $0.entry.planId == planId && $0.entry.day == day
+        }
+    }
+
     // MARK: - Внутреннее
 
     private func upsert(_ intake: Intake) {

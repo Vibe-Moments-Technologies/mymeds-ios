@@ -37,6 +37,35 @@ extension IntakeStatus {
     }
 }
 
+extension PlanState {
+    var label: String {
+        switch self {
+        case .draft: return "черновик"
+        case .upcoming: return "будущий"
+        case .active: return "активный"
+        case .finished: return "завершён"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .draft: return "square.and.pencil"
+        case .upcoming: return "hourglass"
+        case .active: return "play.circle.fill"
+        case .finished: return "checkmark.seal"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .draft: return .gray
+        case .upcoming: return .blue
+        case .active: return .green
+        case .finished: return .gray
+        }
+    }
+}
+
 extension Medication {
     /// Акцентный цвет: colorHex лекарства, иначе палитра по умолчанию.
     var accent: Color {
