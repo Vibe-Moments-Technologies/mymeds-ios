@@ -4,7 +4,8 @@ import Foundation
 // авторинге, на диске — развёрнутая сетка по дням.
 
 /// Паттерн уровня «Режим»: чередование `8/16`, отрезки `7:24;14:32`.
-public enum SchedulePattern: Equatable, Sendable {
+/// (без Equatable: массив таплов ассоциированных значений его не синтезирует)
+public enum SchedulePattern: Sendable {
     case uniform(dose: Double)
     case alternate(low: Double, high: Double)
     case segments([(days: Int, dose: Double)])
