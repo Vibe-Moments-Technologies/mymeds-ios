@@ -9,6 +9,8 @@ options:
 packages:
   MyMedsCore:
     path: MyMedsCore
+  DesignSystem:
+    path: DesignSystem
 
 targets:
   MyMeds:
@@ -22,6 +24,8 @@ targets:
     dependencies:
       - package: MyMedsCore
         product: MyMedsCore
+      - package: DesignSystem
+        product: DesignSystem
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.l1ratch.mymeds

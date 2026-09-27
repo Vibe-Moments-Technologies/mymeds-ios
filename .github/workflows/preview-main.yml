@@ -13,6 +13,7 @@ on:
     paths:
       - 'MyMeds/**'
       - 'MyMedsCore/**'
+      - 'DesignSystem/**'
       - 'project.yml'
       - 'tools/**'
       - '.github/workflows/preview-main.yml'
@@ -88,22 +89,9 @@ jobs:
           set -o pipefail
           swift test --package-path MyMedsCore 2>&1 | tee swift-test.log
 
-      - name: 🚨 Surface test failures (annotations + summary)
-        if: failure()
-        run: |
-          [ -f swift-test.log ] || exit 0
-          grep -E 'error:|XCTAssert.*failed|Fatal error' swift-test.log | head -40 | while IFS= read -r line; do
-            echo "::error::${line}"
-          done
-          {
-            echo '### 🧪 Swift test failures'
-            echo '```'
-            grep -E 'error:|XCTAssert.*failed|Fatal error|Test Case.*failed' swift-test.log | head -60
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
       - name: 🔨 Build iOS App (no codesign)
         run: |
+          set -o pipefail
           xcodebuild -scheme MyMeds \
             -configuration Release \
             -sdk iphoneos \
@@ -112,7 +100,22 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            build
+            build 2>&1 | tee xcodebuild.log
+
+      - name: 🚨 Surface build/test failures (annotations + summary)
+        if: failure()
+        run: |
+          LOGS=$(ls swift-test.log xcodebuild.log 2>/dev/null)
+          [ -z "$LOGS" ] && exit 0
+          cat $LOGS | grep -E 'error:|XCTAssert.*failed|Fatal error' | sort -u | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          {
+            echo '### 🧪 Build/test failures'
+            echo '```'
+            cat $LOGS | grep -E 'error:|XCTAssert.*failed|Fatal error|Test Case.*failed' | sort -u | head -60
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: 📦 Package Unsigned IPA
         run: |
