@@ -40,7 +40,7 @@ public final class StorageService: @unchecked Sendable {
     public func load() -> AppData? {
         for url in [fileURL, backupURL] {
             guard let data = try? Data(contentsOf: url),
-                  let decoded = try? decoder.decode(AppData.self, from: data) else { continue }
+                  let decoded = try? appJSONDecoder.decode(AppData.self, from: data) else { continue }
             return decoded
         }
         return nil
@@ -53,7 +53,7 @@ public final class StorageService: @unchecked Sendable {
         var payload = data
         payload.exportedAt = Date()
         try payload.validate()
-        let encoded = try encoder.encode(payload)
+        let encoded = try appJSONEncoder.encode(payload)
 
         var coordinationError: NSError?
         var writeError: Error?
@@ -84,14 +84,15 @@ public final class StorageService: @unchecked Sendable {
     }
 }
 
-private let encoder: JSONEncoder = {
+// Общие кодеки модуля (ISO-8601 даты) — используются StorageService и MedPlanCodec.
+let appJSONEncoder: JSONEncoder = {
     let e = JSONEncoder()
     e.dateEncodingStrategy = .iso8601
     e.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
     return e
 }()
 
-private let decoder: JSONDecoder = {
+let appJSONDecoder: JSONDecoder = {
     let d = JSONDecoder()
     d.dateDecodingStrategy = .iso8601
     return d
