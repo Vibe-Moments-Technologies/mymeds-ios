@@ -7,9 +7,9 @@
       "name": "Мои Лекарства (Dev)",
       "bundleIdentifier": "com.l1ratch.mymeds",
       "developerName": "Vibe Moments Technologies",
-      "localizedDescription": "Дневник приёма лекарств: планы и блоки, чередование доз, кумулятивная доза, напоминания и отчёт врачу.\n\nКанал: preview\nСборка: 26.1-dev.3\nОбновлено: 2026-09-27 12:59 UTC",
-      "version": "26.1-dev.3",
-      "versionDate": "2026-09-27T12:59:12.104392+00:00",
+      "localizedDescription": "Дневник приёма лекарств: планы и блоки, чередование доз, кумулятивная доза, напоминания и отчёт врачу.\n\nКанал: preview\nСборка: 26.1-dev.4\nОбновлено: 2026-09-27 14:08 UTC",
+      "version": "26.1-dev.4",
+      "versionDate": "2026-09-27T14:08:10.957617+00:00",
       "downloadURL": "https://github.com/Vibe-Moments-Technologies/mymeds-ios/releases/download/preview/MyMeds-preview.ipa",
       "tintColor": "0EA5E9",
       "channel": "preview"
