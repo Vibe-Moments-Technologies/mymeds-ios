@@ -96,11 +96,12 @@ struct PlanConstructorView: View {
         }
     }
 
+    @ViewBuilder
     private var levelSection: some View {
         switch level {
-        case .simple: return EmptyView()      // всё уже в базовой секции
-        case .mode: return patternSection
-        case .pro: return proSection
+        case .simple: EmptyView()         // всё уже в базовой секции
+        case .mode: patternSection
+        case .pro: proSection
         }
     }
 
