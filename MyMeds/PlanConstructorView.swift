@@ -32,7 +32,7 @@ struct PlanConstructorView: View {
 
     @State private var planName = ""
     @State private var startsToday = true
-    @State private var startDate = CivilDate.today()
+    @State private var startEpoch = CivilDate.today().daysSinceEpoch
     @State private var durationDays = 28
 
     // Уровень «Режим»
@@ -50,6 +50,12 @@ struct PlanConstructorView: View {
 
     @State private var showJSON = false
     @State private var errorText: String?
+
+    private var startDate: CivilDate { CivilDate(daysSinceEpoch: startEpoch) }
+    private var dateRange: ClosedRange<Int> {
+        let today = CivilDate.today().daysSinceEpoch
+        return today...(today + 365)
+    }
 
     var body: some View {
         NavigationStack {
@@ -148,12 +154,7 @@ struct PlanConstructorView: View {
                     .glassField()
                 Toggle("Начать сегодня", isOn: $startsToday)
                 if !startsToday {
-                    Stepper("Старт: \(startDate.description)",
-                            value: Binding(
-                                get: { startDate.daysSinceEpoch },
-                                set: { startDate = CivilDate(daysSinceEpoch: $0) }),
-                            in: CivilDate.today().daysSinceEpoch...
-                               CivilDate.today().daysSinceEpoch + 365)
+                    Stepper("Старт: \(startDate.description)", value: $startEpoch, in: dateRange)
                 }
                 Stepper("Длительность: \(durationDays) дн.", value: $durationDays, in: 1...400)
                 if level == .simple {
