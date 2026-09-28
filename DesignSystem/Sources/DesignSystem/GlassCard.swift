@@ -1,14 +1,15 @@
 import SwiftUI
 
+/// Карточка: один компонент внешнего вида (§12). Форма — скруглённый
+/// прямоугольник (Radius.card), не капсула; tint подмешивается в стекло.
 public struct GlassCard<Content: View>: View {
     public var cornerRadius: CGFloat
     public var tint: Color?
     @ViewBuilder public var content: Content
 
     public init(
-        cornerRadius: CGFloat = 20,
+        cornerRadius: CGFloat = Radius.card,
         tint: Color? = nil,
-        glow: Double = 0.4,
         @ViewBuilder content: () -> Content
     ) {
         self.cornerRadius = cornerRadius

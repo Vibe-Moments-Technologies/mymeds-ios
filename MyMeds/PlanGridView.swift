@@ -66,10 +66,11 @@ struct PlanGridView: View {
                     Text("остановлен \(stopped.description)")
                         .font(.caption).foregroundStyle(.orange)
                 }
-                HStack(spacing: 12) {
-                    GlassBadge(label: "принято \(stats.taken)", icon: "checkmark", color: .green)
-                    GlassBadge(label: "пропущено \(stats.skipped)", icon: "xmark", color: .orange)
-                    GlassBadge(label: "не отмечено \(stats.missed)", icon: "exclamationmark", color: .red)
+                HStack(spacing: 8) {
+                    GlassBadge(label: "\(stats.taken) принято", icon: "checkmark", color: .green)
+                    GlassBadge(label: "\(stats.skipped) пропущено", icon: "xmark", color: .orange)
+                    GlassBadge(label: "\(stats.missed) без отметки", icon: "exclamationmark", color: .red)
+                    Spacer(minLength: 0)
                 }
                 HStack {
                     Text("прогресс \(stats.elapsedDays)/\(plan.durationDays)")

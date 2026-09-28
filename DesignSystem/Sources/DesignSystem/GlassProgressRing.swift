@@ -23,14 +23,14 @@ public struct GlassProgressRing: View {
 
     public var body: some View {
         ZStack {
-            // Background Glass Track
+            // Трек: тонкий, читаемый и на светлом, и на тёмном фоне
             Circle()
                 .stroke(
-                    Color.white.opacity(0.12),
+                    Color.primary.opacity(0.12),
                     style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
                 )
 
-            // Outer Soft Glow Layer
+            // Мягкое свечение прогресса (единственная «украшательная» часть)
             Circle()
                 .trim(from: 0.0, to: CGFloat(progress))
                 .stroke(
@@ -39,13 +39,13 @@ public struct GlassProgressRing: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    style: StrokeStyle(lineWidth: strokeWidth + 3, lineCap: .round)
+                    style: StrokeStyle(lineWidth: strokeWidth + 2, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .blur(radius: 5)
-                .opacity(0.6)
+                .blur(radius: 4)
+                .opacity(0.45)
 
-            // Primary Glowing Progress Stroke
+            // Основной штрих прогресса
             Circle()
                 .trim(from: 0.0, to: CGFloat(progress))
                 .stroke(
@@ -59,15 +59,15 @@ public struct GlassProgressRing: View {
                 .rotationEffect(.degrees(-90))
                 .animation(Motion.progress, value: progress)
 
-            // Center Percentage Text
+            // Центр: цвет — системный primary, а не белый (на светлой теме белый невидим)
             VStack(spacing: 0) {
                 Text("\(Int(progress * 100))%")
                     .font(.system(size: size * 0.26, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.primary)
 
                 Text(caption)
                     .font(.system(size: size * 0.11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.65))
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(width: size, height: size)

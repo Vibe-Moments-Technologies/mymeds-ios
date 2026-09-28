@@ -38,20 +38,11 @@ struct HeatmapGrid: View {
                         Button {
                             onSelect(date)
                         } label: {
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                .fill(HeatmapGrid.color(for: summaries[date.daysSinceEpoch],
-                                                        date: date, today: today))
-                                .aspectRatio(1, contentMode: .fit)
-                                .overlay {
-                                    if date == today {
-                                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                            .strokeBorder(Color.white.opacity(0.8), lineWidth: 1.5)
-                                    }
-                                }
+                            cell(for: date)
                         }
                         .buttonStyle(.plain)
                     } else {
-                        Color.clear.aspectRatio(1, contentMode: .fit)
+                        Color.clear.frame(height: cellSide)
                     }
                 }
             }
@@ -65,6 +56,26 @@ struct HeatmapGrid: View {
             .font(.system(size: 10))
             .foregroundStyle(.secondary)
         }
+    }
+
+    /// Клетка фиксированной высоты: внутри LazyVGrid с flexible-колонками
+    /// aspectRatio на пустом Color давал клетки-блобы высотой в экран.
+    private var cellSide: CGFloat { 34 }
+
+    private func cell(for date: CivilDate) -> some View {
+        let fill = HeatmapGrid.color(for: summaries[date.daysSinceEpoch], date: date, today: today)
+        let isToday = date == today
+        return ZStack {
+            RoundedRectangle(cornerRadius: Radius.chip, style: .continuous)
+                .fill(fill)
+            RoundedRectangle(cornerRadius: Radius.chip, style: .continuous)
+                .strokeBorder(isToday ? Color.primary.opacity(0.9) : Color.primary.opacity(0.06),
+                              lineWidth: isToday ? 1.5 : 0.5)
+            Text("\(date.day)")
+                .font(.system(size: 11, weight: isToday ? .bold : .medium, design: .rounded))
+                .foregroundStyle(.primary.opacity(date > today ? 0.35 : 0.75))
+        }
+        .frame(height: cellSide)
     }
 
     private func legendItem(_ color: Color, _ label: String) -> some View {

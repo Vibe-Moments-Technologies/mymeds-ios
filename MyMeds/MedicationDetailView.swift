@@ -103,10 +103,11 @@ struct MedicationDetailView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                HStack(spacing: 12) {
-                    GlassBadge(label: "принято \(counts.taken)", icon: "checkmark", color: .green)
-                    GlassBadge(label: "пропущено \(counts.skipped)", icon: "xmark", color: .orange)
-                    GlassBadge(label: "не отмечено \(counts.missed)", icon: "exclamationmark", color: .red)
+                HStack(spacing: 8) {
+                    GlassBadge(label: "\(counts.taken) принято", icon: "checkmark", color: .green)
+                    GlassBadge(label: "\(counts.skipped) пропущено", icon: "xmark", color: .orange)
+                    GlassBadge(label: "\(counts.missed) без отметки", icon: "exclamationmark", color: .red)
+                    Spacer(minLength: 0)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -71,26 +71,31 @@ struct AnalyticsView: View {
 
     private var adherenceCard: some View {
         GlassCard {
-            HStack(spacing: 20) {
-                GlassProgressRing(
-                    progress: adherence.adherence ?? 0,
-                    size: 72,
-                    caption: "адгереция")
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(adherence.adherence == nil
-                         ? "нет решённых дней"
-                         : String(format: "taken / (taken+skipped+missed) = %.0f%%",
-                                  (adherence.adherence ?? 0) * 100))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 8) {
-                        GlassBadge(label: "принято \(adherence.taken)", icon: "checkmark", color: .green)
-                        GlassBadge(label: "пропущено \(adherence.skipped)", icon: "xmark", color: .orange)
-                        GlassBadge(label: "не отмечено \(adherence.missed)",
-                                   icon: "exclamationmark", color: .red)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 16) {
+                    GlassProgressRing(
+                        progress: adherence.adherence ?? 0,
+                        size: 72,
+                        caption: "адгереция")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(adherence.adherence == nil
+                             ? "нет решённых дней"
+                             : String(format: "%.0f%% — принято от решённых дней",
+                                      (adherence.adherence ?? 0) * 100))
+                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(.primary)
+                        Text("taken / (taken + skipped + missed)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    GlassBadge(label: "\(adherence.taken)", icon: "checkmark", color: .green)
+                    GlassBadge(label: "\(adherence.skipped)", icon: "xmark", color: .orange)
+                    GlassBadge(label: "\(adherence.missed)", icon: "exclamationmark", color: .red)
+                    Spacer(minLength: 0)
+                }
             }
         }
     }
