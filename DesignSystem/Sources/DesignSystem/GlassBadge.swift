@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Универсальный бейдж статуса: один компонент для Home, деталей дня и календаря
-/// (§12: одинаковые элементы строятся одним компонентом).
+/// (§12: одинаковые элементы строятся одним компонентом). Нативный Liquid Glass.
 public struct GlassBadge: View {
     public var label: String
     public var icon: String?
@@ -25,6 +25,6 @@ public struct GlassBadge: View {
         .foregroundStyle(color)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .liquidGlass(cornerRadius: 12, tint: color, glow: 0.3)
+        .liquidGlass(cornerRadius: 12, tint: color)
     }
 }

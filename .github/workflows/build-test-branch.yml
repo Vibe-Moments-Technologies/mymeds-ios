@@ -41,7 +41,7 @@ jobs:
 
   build_ipa:
     name: 🍏 Test Build iOS Unsigned IPA
-    runs-on: macos-15
+    runs-on: macos-26
     needs: resolve
     outputs:
       artifact_slug: ${{ steps.slug.outputs.artifact_slug }}
@@ -71,10 +71,8 @@ jobs:
 
       - name: 🛠️ Set Xcode Version
         run: |
-          if [ -d "/Applications/Xcode_16.4.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
-          elif [ -d "/Applications/Xcode_16.2.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          if [ -d "/Applications/Xcode_26.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
           fi
           xcodebuild -version
 

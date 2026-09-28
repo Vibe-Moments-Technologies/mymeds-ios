@@ -519,7 +519,7 @@ struct Settings: Codable {
 | Модуль | Содержимое |
 |---|---|
 | `MyMedsCore` — локальный SPM-пакет | Модель, резолв `entries(on:)`, `StorageService`, кодеки `medplan/1` и `mymeds-backup/1`, планировщик уведомлений. Без SwiftUI. Общий для app, виджета и Intent Handler — поэтому пакет с первого дня, а не «вынесем потом» |
-| `DesignSystem` — переиспользование из `UnicTracker` | GlassCard, GlassButton, GlassProgressRing, MeshGradientBackground + `Motion.swift` — единый набор токенов анимаций (спринги, длительности, переходы). Любая анимация в приложении — только через токены; никакого ad-hoc `.animation(...)` внутри экранов |
+| `DesignSystem` — переиспользование из `UnicTracker` | GlassCard, GlassButton, GlassProgressRing, MeshGradientBackground + `Motion.swift` — единый набор токенов анимаций (спринги, длительности, переходы). Любая анимация в приложении — только через токены; никакого ad-hoc `.animation(...)` внутри экранов. Стек: iOS 26+, **нативный Liquid Glass** (`glassEffect` / `.buttonStyle(.glass)` / системные материалы) — имитации шейдерами удалены |
 | `MyMeds` — app target | Только экраны: бизнес-логика в `MyMedsCore`, внешний вид в `DesignSystem` |
 
 Одинаковые элементы (ячейка дозы, карточка лекарства, бейдж статуса, квадрат heatmap, кнопка отметки, маскот) строятся **одним** компонентом с конфигурацией, а не копируются по экранам. Правило: вторая копия UI-элемента = немедленный вынос в общий компонент.

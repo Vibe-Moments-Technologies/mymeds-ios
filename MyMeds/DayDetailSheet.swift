@@ -112,12 +112,12 @@ struct DayDetailSheet: View {
                         .font(.system(.body, design: .rounded))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
-                        .liquidGlass(cornerRadius: 12, glow: 0.2)
+                        .liquidGlass(cornerRadius: 12)
                     Text(item.medication.unit.title)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button("Сохранить") { saveDose() }
-                        .buttonStyle(GlassButtonStyle(tint: item.medication.accent, isProminent: true))
+                        .buttonStyle(GlassButtonStyle(tint: item.medication.accent))
                     Button {
                         doseInput = formatDose(item.entry.dose)
                         saveDose(clear: true)

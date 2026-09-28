@@ -110,8 +110,7 @@ struct PlanGridView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 48)
             .liquidGlass(cornerRadius: 10,
-                         tint: hasDose ? item?.status.color.opacity(0.12) : nil,
-                         glow: 0.15)
+                         tint: hasDose ? item?.status.color.opacity(0.12) : nil)
         }
         .buttonStyle(.plain)
         .disabled(item == nil)

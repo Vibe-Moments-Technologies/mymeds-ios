@@ -1,9 +1,11 @@
 import SwiftUI
 
+/// Нативная glass-кнопка iOS 26: системные состояния (highlight, tint,
+/// анимации) даёт `.buttonStyle(.glass)`; хаптик остаётся наш (Motion-токены).
 public struct GlassButtonStyle: ButtonStyle {
     public var tint: Color?
-    public var cornerRadius: CGFloat
-    public var isProminent: Bool
+    public var cornerRadius: CGFloat   // не используется системным стилем; оставлен для совместимости вызовов
+    public var isProminent: Bool       // при true подмешивает tint; иначе прозрачное стекло
 
     public init(tint: Color? = nil, cornerRadius: CGFloat = 16, isProminent: Bool = false) {
         self.tint = tint
@@ -13,15 +15,8 @@ public struct GlassButtonStyle: ButtonStyle {
 
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(Motion.press, value: configuration.isPressed)
-            .liquidGlass(
-                cornerRadius: cornerRadius,
-                depth: .ultraLiquid,
-                tint: isProminent ? (tint ?? Color.blue) : tint,
-                specular: true,
-                glow: isProminent ? 0.8 : 0.3
-            )
+            .buttonStyle(.glass)   // нативный Liquid Glass в интерактиве
+            .tint(isProminent ? (tint ?? Color.blue) : tint)
             .onChange(of: configuration.isPressed) { _, isPressed in
                 #if canImport(UIKit)
                 if isPressed {
@@ -29,57 +24,5 @@ public struct GlassButtonStyle: ButtonStyle {
                 }
                 #endif
             }
-    }
-}
-
-public struct GlassFAB: View {
-    public var icon: String
-    public var label: String?
-    public var tint: Color
-    public var action: () -> Void
-
-    public init(
-        icon: String = "plus",
-        label: String? = nil,
-        tint: Color = Color.cyan,
-        action: @escaping () -> Void
-    ) {
-        self.icon = icon
-        self.label = label
-        self.tint = tint
-        self.action = action
-    }
-
-    public var body: some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .bold))
-                if let text = label {
-                    Text(text)
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                }
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, label != nil ? 20 : 16)
-            .padding(.vertical, 14)
-            .background(
-                ZStack {
-                    Capsule().fill(.ultraThinMaterial)
-                    Capsule().fill(tint.opacity(0.35))
-                    Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.8), tint.opacity(0.6), Color.white.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.2
-                        )
-                }
-            )
-            .shadow(color: tint.opacity(0.5), radius: 12, x: 0, y: 6)
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }

@@ -6,8 +6,7 @@ import PackageDescription
 let package = Package(
     name: "MyMedsCore",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14),  // для `swift test` на хост-машине/CI без симулятора
+        .iOS(.v26),
     ],
     products: [
         .library(name: "MyMedsCore", targets: ["MyMedsCore"]),

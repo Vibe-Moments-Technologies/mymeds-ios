@@ -3,7 +3,7 @@ name: MyMeds
 options:
   bundleIdPrefix: com.l1ratch
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"
   developmentLanguage: ru
 
 packages:

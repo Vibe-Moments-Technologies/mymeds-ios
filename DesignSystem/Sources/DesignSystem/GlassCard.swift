@@ -3,7 +3,6 @@ import SwiftUI
 public struct GlassCard<Content: View>: View {
     public var cornerRadius: CGFloat
     public var tint: Color?
-    public var glow: Double
     @ViewBuilder public var content: Content
 
     public init(
@@ -14,19 +13,12 @@ public struct GlassCard<Content: View>: View {
     ) {
         self.cornerRadius = cornerRadius
         self.tint = tint
-        self.glow = glow
         self.content = content()
     }
 
     public var body: some View {
         content
             .padding(16)
-            .liquidGlass(
-                cornerRadius: cornerRadius,
-                depth: .ultraLiquid,
-                tint: tint,
-                specular: true,
-                glow: glow
-            )
+            .liquidGlass(cornerRadius: cornerRadius, tint: tint)
     }
 }
