@@ -23,7 +23,7 @@ struct CalendarView: View {
     var body: some View {
         let cells = MonthLayout.cells(anchor: monthAnchor)
         return ZStack {
-            MeshGradientBackground()
+            AppBackground()
             ScrollView {
                 VStack(spacing: 14) {
                     monthHeader
@@ -93,7 +93,7 @@ struct CalendarDaySheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradientBackground()
+                AppBackground()
                 ScrollView {
                     VStack(spacing: 12) {
                         let items = store.items(on: date)

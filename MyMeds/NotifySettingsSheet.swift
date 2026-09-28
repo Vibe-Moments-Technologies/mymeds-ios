@@ -21,7 +21,7 @@ struct NotifySettingsSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradientBackground()
+                AppBackground()
                 Form {
                     Section {
                         Toggle("Напоминания", isOn: $enabled)

@@ -60,7 +60,7 @@ struct PlanConstructorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradientBackground()
+                AppBackground()
                 content
             }
             .navigationTitle("Новый план")
@@ -272,7 +272,7 @@ struct PlanConstructorView: View {
     private var jsonPreviewSheet: some View {
         NavigationStack {
             ZStack {
-                MeshGradientBackground()
+                AppBackground()
                 ScrollView {
                     Text(previewJSON())
                         .font(.system(size: 11, design: .monospaced))
@@ -414,7 +414,7 @@ extension View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(Color.primary.opacity(0.06))
             )
     }
 }

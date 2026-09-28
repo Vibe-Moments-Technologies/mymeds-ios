@@ -65,6 +65,8 @@ def main():
     ap = argparse.ArgumentParser(description="aknekytan.db → mymeds-backup/1")
     ap.add_argument("db", help="путь к aknekytan.db")
     ap.add_argument("-o", "--out", default="migration/mymeds_backup.json")
+    ap.add_argument("--main-only", action="store_true",
+                    help="только основной препарат (Акнекутан): additional-лекарства не импортируются")
     args = ap.parse_args()
 
     db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
@@ -140,6 +142,8 @@ def main():
 
         for m in meds:
             if m.get("id") == "main" or m.get("type") == "main":
+                continue
+            if args.main_only:
                 continue
             dose_val, unit = parse_dose_text(m.get("dose_text", ""))
             active_days, notify_variants = {}, set()

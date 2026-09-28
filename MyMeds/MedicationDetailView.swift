@@ -20,7 +20,7 @@ struct MedicationDetailView: View {
 
     var body: some View {
         ZStack {
-            MeshGradientBackground()
+            AppBackground()
             ScrollView {
                 VStack(spacing: 16) {
                     headerCard
@@ -144,7 +144,7 @@ struct PlanRow: View {
                 }
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        Capsule().fill(Color.white.opacity(0.12))
+                        Capsule().fill(Color.primary.opacity(0.12))
                         Capsule()
                             .fill(medication.accent)
                             .frame(width: geo.size.width * stats.progress)

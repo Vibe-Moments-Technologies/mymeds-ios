@@ -35,7 +35,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradientBackground()
+                AppBackground()
                 List {
                     Section("Данные") {
                         Button {

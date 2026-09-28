@@ -36,7 +36,7 @@ struct MedicationsListView: View {
 
     var body: some View {
         ZStack {
-            MeshGradientBackground()
+            AppBackground()
             VStack(spacing: 12) {
                 Picker("", selection: $segment) {
                     ForEach(Segment.allCases) { Text($0.rawValue).tag($0) }

@@ -22,7 +22,7 @@ struct DayDetailSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                MeshGradientBackground()
+                AppBackground()
                 ScrollView {
                     VStack(spacing: 16) {
                         headerCard

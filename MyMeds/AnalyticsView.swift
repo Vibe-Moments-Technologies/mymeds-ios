@@ -40,7 +40,7 @@ struct AnalyticsView: View {
 
     var body: some View {
         ZStack {
-            MeshGradientBackground()
+            AppBackground()
             ScrollView {
                 VStack(spacing: 16) {
                     periodPicker

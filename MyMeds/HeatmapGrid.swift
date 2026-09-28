@@ -10,24 +10,28 @@ struct HeatmapGrid: View {
     let today: CivilDate
     var onSelect: (CivilDate) -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
+    private var isDark: Bool { colorScheme == .dark }
+
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
 
     /// Градации §7: нет приёма / 0 / <⅓ / <⅔ / всё принято. Будущее — нейтрально.
-    static func color(for summary: DaySummary?, date: CivilDate, today: CivilDate) -> Color {
-        guard let summary, summary.total > 0 else {
-            return Color.white.opacity(0.06)
-        }
-        if date > today {
-            return Color.white.opacity(0.12)
-        }
-        guard let fraction = summary.fraction else {
-            return Color.white.opacity(0.06)
-        }
+    /// Зелёный — системный (адаптируется к теме сам), красный/оранжевый — с
+    /// непрозрачностью, подобранной под текущую тему.
+    static func color(for summary: DaySummary?, date: CivilDate, today: CivilDate,
+                      isDark: Bool) -> Color {
+        let base = Color.primary.opacity(isDark ? 0.08 : 0.06)
+        guard let summary, summary.total > 0 else { return base }     // нет приёма
+        if date > today { return Color.primary.opacity(isDark ? 0.12 : 0.10) }
+        guard let fraction = summary.fraction else { return base }
+
+        let red = isDark ? Color.red.opacity(0.5) : Color.red.opacity(0.65)
+        let orange = isDark ? Color.orange.opacity(0.55) : Color.orange.opacity(0.7)
         if fraction >= 1 { return Color.green }
-        if fraction >= 2.0 / 3.0 { return Color.green.opacity(0.65) }
-        if fraction >= 1.0 / 3.0 { return Color.green.opacity(0.4) }
-        if fraction > 0 { return Color.orange.opacity(0.55) }
-        return Color.red.opacity(0.45)
+        if fraction >= 2.0 / 3.0 { return Color.green.opacity(0.7) }
+        if fraction >= 1.0 / 3.0 { return Color.green.opacity(0.45) }
+        if fraction > 0 { return orange }
+        return red
     }
 
     var body: some View {
@@ -47,10 +51,10 @@ struct HeatmapGrid: View {
                 }
             }
             HStack(spacing: 10) {
-                legendItem(Color.white.opacity(0.06), "нет")
-                legendItem(Color.red.opacity(0.45), "0")
-                legendItem(Color.green.opacity(0.4), "<⅓")
-                legendItem(Color.green.opacity(0.65), "<⅔")
+                legendItem(Color.primary.opacity(isDark ? 0.08 : 0.06), "нет")
+                legendItem(isDark ? Color.red.opacity(0.5) : Color.red.opacity(0.65), "0")
+                legendItem(Color.green.opacity(0.45), "<⅓")
+                legendItem(Color.green.opacity(0.7), "<⅔")
                 legendItem(Color.green, "всё")
             }
             .font(.system(size: 10))
@@ -63,7 +67,8 @@ struct HeatmapGrid: View {
     private var cellSide: CGFloat { 34 }
 
     private func cell(for date: CivilDate) -> some View {
-        let fill = HeatmapGrid.color(for: summaries[date.daysSinceEpoch], date: date, today: today)
+        let fill = HeatmapGrid.color(for: summaries[date.daysSinceEpoch], date: date,
+                                     today: today, isDark: isDark)
         let isToday = date == today
         return ZStack {
             RoundedRectangle(cornerRadius: Radius.chip, style: .continuous)
@@ -73,7 +78,9 @@ struct HeatmapGrid: View {
                               lineWidth: isToday ? 1.5 : 0.5)
             Text("\(date.day)")
                 .font(.system(size: 11, weight: isToday ? .bold : .medium, design: .rounded))
-                .foregroundStyle(.primary.opacity(date > today ? 0.35 : 0.75))
+                .foregroundStyle(isDark
+                                 ? Color.white.opacity(date > today ? 0.35 : 0.9)
+                                 : Color.primary.opacity(date > today ? 0.35 : 0.85))
         }
         .frame(height: cellSide)
     }
