@@ -2,6 +2,9 @@
 import UIKit
 
 // MARK: - Liquid Haptic Feedback Engine (порт из UnicTracker)
+/// @MainActor: генераторы UIKit должны жить на main (и на нём вызываются из
+/// SwiftUI-кода); синглтон создан лениво при первом обращении из main-кода.
+@MainActor
 public final class HapticManager {
     public static let shared = HapticManager()
 

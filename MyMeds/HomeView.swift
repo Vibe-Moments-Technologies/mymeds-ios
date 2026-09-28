@@ -122,7 +122,7 @@ struct HomeView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 Button("Открыть настройки") { showSettings = true }
-                    .buttonStyle(GlassButtonStyle(tint: Palette.primary, isProminent: true))
+                    .buttonStyle(.glassProminent).tint(Palette.primary)
             }
             .padding(8)
         }
@@ -175,7 +175,7 @@ struct IntakeRow: View {
                                 .foregroundStyle(.secondary)
                                 .padding(10)
                         }
-                        .buttonStyle(GlassButtonStyle())
+                        .buttonStyle(.glass)
                     }
                     Button(action: onDetail) {
                         Image(systemName: "slider.horizontal.3")
@@ -183,7 +183,7 @@ struct IntakeRow: View {
                             .foregroundStyle(item.medication.accent)
                             .padding(10)
                     }
-                    .buttonStyle(GlassButtonStyle(tint: item.medication.accent))
+                    .buttonStyle(.glass).tint(item.medication.accent)
                 }
             }
         }
@@ -206,6 +206,6 @@ struct IntakeRow: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
         }
-        .buttonStyle(GlassButtonStyle(tint: tint))
+        .buttonStyle(.glass).tint(tint)
     }
 }

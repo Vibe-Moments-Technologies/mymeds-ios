@@ -17,7 +17,7 @@ public struct LiquidGlassModifier: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .glassEffect(
-                tintColor.map { GlassType.tint($0) } ?? .regular
+                tintColor.map { Glass.regular.tint($0) } ?? .regular
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }

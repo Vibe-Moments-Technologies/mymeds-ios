@@ -39,7 +39,7 @@ struct MedPlanImportSheet: View {
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 12)
                         }
-                        .buttonStyle(GlassButtonStyle(tint: Palette.primary, isProminent: true))
+                        .buttonStyle(.glassProminent).tint(Palette.primary)
                     }
                     .padding(16)
                 }

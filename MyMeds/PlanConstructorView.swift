@@ -229,7 +229,7 @@ struct PlanConstructorView: View {
                 } label: {
                     Label("Предпросмотр medplan/1", systemImage: "curlybraces")
                 }
-                .buttonStyle(GlassButtonStyle())
+                .buttonStyle(.glass)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

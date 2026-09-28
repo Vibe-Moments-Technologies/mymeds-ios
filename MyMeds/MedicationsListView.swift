@@ -55,7 +55,7 @@ struct MedicationsListView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(12)
                         }
-                        .buttonStyle(GlassButtonStyle())
+                        .buttonStyle(.glass)
                         if segment == .active {
                             ForEach(activeMedications) { med in
                                 NavigationLink {

@@ -117,7 +117,7 @@ struct DayDetailSheet: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     Button("Сохранить") { saveDose() }
-                        .buttonStyle(GlassButtonStyle(tint: item.medication.accent))
+                        .buttonStyle(.glass).tint(item.medication.accent)
                     Button {
                         doseInput = formatDose(item.entry.dose)
                         saveDose(clear: true)
@@ -125,7 +125,7 @@ struct DayDetailSheet: View {
                         Image(systemName: "arrow.uturn.backward")
                             .padding(10)
                     }
-                    .buttonStyle(GlassButtonStyle())
+                    .buttonStyle(.glass)
                 }
                 Text(status == .taken || status == .skipped
                      ? "Отметка есть — правка изменит фактическую дозу"
@@ -147,7 +147,7 @@ struct DayDetailSheet: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
             }
-            .buttonStyle(GlassButtonStyle(tint: .green, isProminent: true))
+            .buttonStyle(.glassProminent).tint(.green)
 
             Button {
                 mark(.skipped)
@@ -158,7 +158,7 @@ struct DayDetailSheet: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
             }
-            .buttonStyle(GlassButtonStyle(tint: .orange))
+            .buttonStyle(.glass).tint(.orange)
 
             if currentIntake?.status != nil {
                 Button {
@@ -174,7 +174,7 @@ struct DayDetailSheet: View {
                         .foregroundStyle(.secondary)
                         .padding(14)
                 }
-                .buttonStyle(GlassButtonStyle())
+                .buttonStyle(.glass)
             }
         }
         .animation(Motion.statusChange, value: status)

@@ -51,7 +51,7 @@ struct CalendarView: View {
             Button { shiftMonth(-1) } label: {
                 Image(systemName: "chevron.left").padding(10)
             }
-            .buttonStyle(GlassButtonStyle())
+            .buttonStyle(.glass)
             Spacer()
             Text(MonthLayout.title(anchor: monthAnchor))
                 .font(.system(.headline, design: .rounded))
@@ -60,7 +60,7 @@ struct CalendarView: View {
             Button { shiftMonth(1) } label: {
                 Image(systemName: "chevron.right").padding(10)
             }
-            .buttonStyle(GlassButtonStyle())
+            .buttonStyle(.glass)
         }
     }
 
