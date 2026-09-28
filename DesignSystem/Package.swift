@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.2
 import PackageDescription
 
 // DesignSystem — внешний вид приложения (MED_APP_SPEC.md §12).

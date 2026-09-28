@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.2
 import PackageDescription
 
 // Ядро MyMeds (MED_APP_SPEC.md §12): модель, резолв дня, хранение, кодеки.
