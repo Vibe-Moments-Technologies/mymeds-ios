@@ -7,6 +7,7 @@ let package = Package(
     name: "MyMedsCore",
     platforms: [
         .iOS(.v26),
+        .macOS(.v26),  // для `swift test` на CI-хосте (macos-26 runner)
     ],
     products: [
         .library(name: "MyMedsCore", targets: ["MyMedsCore"]),

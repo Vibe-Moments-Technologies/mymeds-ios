@@ -8,6 +8,7 @@ let package = Package(
     name: "DesignSystem",
     platforms: [
         .iOS(.v26),
+        .macOS(.v26),  // чтобы пакет собирался на CI-хосте; хаптика guarded canImport(UIKit)
     ],
     products: [
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
